@@ -174,8 +174,7 @@ shinyModule <- function(input, output, session, data) {
   # select individual
   output$ui_select_individual <- renderUI({
     req(rv$table)
-    #selectInput(ns("indivL"), "Select individual", choices=unique(mt_track_id(data)), selected=unique(mt_track_id(data))[1])
-    selectInput("individual_select", label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
+    selectInput(ns("individual_select"), label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
                 selected = rv$table[1,mt_track_id_column(rv$data)])
   })
   
@@ -187,11 +186,11 @@ shinyModule <- function(input, output, session, data) {
     # Get the value from the data frame (e.g., Species column)
     new_value <- unique(rv$table[,mt_track_id_column(rv$data)])[selected_row]
     # Update the selectInput
-    updateSelectInput(session, "individual_select", selected = new_value)
+    updateSelectInput(session, ns("individual_select"), selected = new_value)
   })
   
   # Create the proxy object for info table
-  proxy_info_table <- dataTableProxy("info_table")
+  proxy_info_table <- dataTableProxy(ns("info_table"))
   
   # Update the selected row when the dropdown changes
   observeEvent(input$individual_select, {
@@ -207,7 +206,7 @@ shinyModule <- function(input, output, session, data) {
                                                count > 0) |> dplyr::select(notification_type) |> unique()
     # now update the selectInput
     updateSelectInput(session,
-                      inputId = "notification_type",
+                      inputId = ns("notification_type"),
                       choices = update_choices$notification_type,
                       selected = update_choices$notification_type[1]
     )
@@ -215,7 +214,7 @@ shinyModule <- function(input, output, session, data) {
 
   # radioButton for filter type
   output$ui_data_filter <- renderUI({
-    radioButtons(inputId = "filter_toggle", label = "Select filter",
+    radioButtons(inputId = ns("filter_toggle"), label = "Select filter",
                  choices = c("Date","Number of locations"), selected = "Date", inline = TRUE)
   })
   
@@ -224,7 +223,7 @@ shinyModule <- function(input, output, session, data) {
       min_date = suppressWarnings(min(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
       max_date = suppressWarnings(max(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
       req(as.character(min_date) != "Inf" && as.character(max_date) != "Inf")
-      dateRangeInput(inputId = "date_range", label = "Select date range", 
+      dateRangeInput(inputId = ns("date_range"), label = "Select date range", 
                      start = min_date, end = max_date,
                      min = min_date, max = max_date)
     })
@@ -233,7 +232,7 @@ shinyModule <- function(input, output, session, data) {
   output$ui_nlocations <- renderUI({
     max_rows <- nrow(filter_track_data(rv$data, .track_id = input$individual_select))
     req(max_rows >= 1)
-    sliderInput(inputId = "number_locations", label = "Select number of locations", 
+    sliderInput(inputId = ns("number_locations"), label = "Select number of locations", 
                 min = 1, max = max_rows, value = max_rows, step = 1)
   }) 
   
@@ -261,15 +260,14 @@ shinyModule <- function(input, output, session, data) {
   # select individual
   output$ui_select_individual <- renderUI({
     req(rv)
-    #selectInput(ns("indivL"), "Select individual", choices=unique(mt_track_id(data)), selected=unique(mt_track_id(data))[1])
-    selectInput("individual_select", label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
+    selectInput(ns("individual_select"), label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
                 selected = rv$table[1,mt_track_id_column(rv$data)])
   })
   
   # select notification type
   output$ui_notification_type  <- renderUI({
     req(rv$table)
-    selectInput("notification_type", label = "Select event", 
+    selectInput(ns("notification_type"), label = "Select event", 
                 choices = unique(rv$table$notification_type),
                 selected = unique(rv$table$notification_type)[1])
   })
@@ -321,13 +319,13 @@ shinyModule <- function(input, output, session, data) {
       available_colnames <- available_colnames[-which(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value"))]
     }
     # now populate in checkboxGroupInput
-    checkboxGroupInput(inputId = "data_fields", label = "Select data fields",
+    checkboxGroupInput(inputId = ns("data_fields"), label = "Select data fields",
                        choices = available_colnames,
                        selected = available_colnames[1:n_fields])
   })
   
   output$ui_data_field_switch <- renderUI({
-    input_switch(id = "data_toggle", label = "Show data fields", value = TRUE)
+    input_switch(id = ns("data_toggle"), label = "Show data fields", value = TRUE)
   })
   
   # make reactive data for all_table output and downloading features
@@ -394,11 +392,11 @@ shinyModule <- function(input, output, session, data) {
     # Get the value from the data frame (e.g., Species column)
     new_value <- unique(rv$table[,mt_track_id_column(rv$data)])[selected_row]
     # Update the selectInput
-    updateSelectInput(session, "individual_select", selected = new_value)
+    updateSelectInput(session, ns("individual_select"), selected = new_value)
   })
   
   # Create the proxy object for all data table
-  proxy_all_table <- dataTableProxy("all_table")
+  proxy_all_table <- dataTableProxy(ns("all_table"))
   
   # Update the selected row when the dropdown changes
   observeEvent(input$individual_select, {
@@ -454,7 +452,7 @@ shinyModule <- function(input, output, session, data) {
   
   # select basemap type
   output$ui_basemap_type  <- renderUI({
-    selectInput("basemap_type", label = "Select basemap", choices = c("World Imagery","World Topo Map","World Street Map",
+    selectInput(ns("basemap_type"), label = "Select basemap", choices = c("World Imagery","World Topo Map","World Street Map",
                                                                       "NatGeo World Map","OpenStreet Map","OpenStreet Topo Map"),selected = "World Imagery")
   })
   
