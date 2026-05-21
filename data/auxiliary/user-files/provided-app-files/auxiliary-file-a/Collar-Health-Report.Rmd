@@ -1,0 +1,58 @@
+---
+title: "Collar-Health-Report"
+subtitle: "`r move2::mt_track_data(rv$data)$name[1]`"
+output: html_document
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+<style type="text/css">
+h1.title {
+  text-align: center;
+}
+h3.subtitle {
+  text-align: center;
+}
+h3.title {
+  text-align: center;
+}
+h4.date {
+  text-align: center;
+}
+.center {
+  text-align: center;
+}
+</style>
+
+<hr>
+
+### Individual summary: `r input$individual_select`
+<p><span style="font-size: 14px;">Device_ID: </span><span style="font-size: 14px;">`r ind_table_data()[1,"device_id"]`</span></p>
+<p><span style="font-size: 14px;">Min_datetime: </span><span style="font-size: 14px;">`r paste(min(move2::mt_time(filter_track_data(rv$data, .track_id = input$individual_select)),na.rm=TRUE),"UTC")`</span></p>
+<p><span style="font-size: 14px;">Max_datetime: </span><span style="font-size: 14px;">`r paste(max(move2::mt_time(filter_track_data(rv$data, .track_id = input$individual_select)),na.rm=TRUE),"UTC")`</span></p>
+<p><span style="font-size: 14px;">Number_of_locs: </span><span style="font-size: 14px;">`r nrow(filter_track_data(rv$data, .track_id = input$individual_select))`</span></p>
+<p><span style="font-size: 14px;">Number_of_alerts: </span><span style="font-size: 14px;">`r filter_track_data(rv$data, .track_id = input$individual_select)$nAlerts[1]`</span></p>
+<p><span style="font-size: 14px;">Alert_types: </span><span style="font-size: 14px;">`r (rv$table |> filter(.data[[mt_track_id_column(data)]] == input$individual_select & count == 1))[,"notification_type"]`</span></p>
+
+### Map
+
+```{r, echo=FALSE, out.width="80%"}
+knitr::include_graphics(normalizePath("leaflet.png"))
+```
+
+### Location data
+
+```{r, echo=FALSE}
+kbl_table <- ind_table_data()
+if(nrow(kbl_table) < 15){
+  kbl_table <- kbl_table
+}else
+if(nrow(kbl_table) >= 15){
+  kbl_table <- kbl_table[1:15,]
+}  
+kbl_table |> mutate(across(c(Latitude,Longitude), ~ format(round(., 6), nsmall = 6))) |>
+kbl(format = "html", booktabs = TRUE, row.names = FALSE) |>
+kable_styling("striped", position = "center", font_size = 12)
+```
+
+<br>
+
