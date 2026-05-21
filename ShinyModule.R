@@ -115,7 +115,7 @@ shinyModuleUserInterface <- function(id, label) {
 shinyModule <- function(input, output, session, data) {
   # all IDs of UI functions need to be wrapped in ns()
   ns <- session$ns
-  current <- reactiveVal(data)
+  #current <- reactiveVal(data) # note this is not needed because data is already saved in reactiveValues
    
   # create dataset and alert table as reactiveValues
   rv <- reactiveValues(data = data, table = get_alertTable(data))
@@ -821,10 +821,13 @@ shinyModule <- function(input, output, session, data) {
   output$downloadData <- downloadHandler(
     filename = function() {
       if(input$download_select == "All"){
-      paste("data-all_", Sys.Date(), ".csv", sep = "")
+        paste("data-all_", Sys.Date(), ".csv", sep = "")
       }else
       if(input$download_select == "Individual"){
-      paste("data-individual_", Sys.Date(), ".csv", sep = "")
+        paste("data-individual_", Sys.Date(), ".csv", sep = "")
+      }else
+      if(input$download_select == "Report"){
+        paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
       }  
     },
     content = function(file) {
@@ -833,11 +836,14 @@ shinyModule <- function(input, output, session, data) {
       }else
       if(input$download_select == "Individual"){
         write.csv(ind_table_data(), file, row.names = FALSE)  
-      }
+      }else
+      if(input$download_select == "Report"){
+        src <- normalizePath('Collar-Health-Report.Rmd')
+        file.copy(src, 'report_word.Rmd', overwrite = TRUE) 
     }
   )
   # end of server
   
   # data must be returned. Either the unmodified input data, or the modified data by the app
-  return(reactive({ current() }))
+  return(reactive({rv$data}))
 }
