@@ -3,8 +3,8 @@
   "settings": [
     {
       "id": "auxiliary-file-a",
-      "name": "Personalization",
-      "description": "You can personalize the app by providing a file",
+      "name": "Collar-Health-Report.RMD",
+      "description": "Rmarkdown file for report download",
       "type": "USER_FILE"
     }
   ],
