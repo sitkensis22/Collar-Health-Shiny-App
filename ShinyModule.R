@@ -865,7 +865,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         temp_dir <- tempdir()
         mapshot2(user_map(), 
                 file = paste0(temp_dir,"/leaflet.png"))
-        out <- rmarkdown::render(input = getAuxiliaryFilePath("aux_A/Collar-Health-Report.Rmd', output_format = "html_document")
+        out <- rmarkdown::render(input = getAuxiliaryFilePath("auxiliary-file-a"), output_format = "html_document")
         file.rename(out, file)
       }
     }
