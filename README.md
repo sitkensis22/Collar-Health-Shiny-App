@@ -29,26 +29,12 @@ None.
 The Download button enables a local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), or collar health report (as an HTML file) depending on the `Select data` input. 
 
 ### Settings 
-**Set mortality-specific filter:** This logical input acts as a switch to turn on mortality alert filtering based on idenfier(s) provided in the `mortality_id` input. 
+**Select individual (`individual_select`):** Select the individual based on the track id column in the move2 dataset. Note that the individual can also be selected by clicking on the "Track information" or "All data" table rows.
 
-*Please list and define all settings that the App requires to be set by the App user, if necessary including their unit. Please state each of the settings that the user will encounter in the UI of the shiny app.*
 
-*Example:* `Radius of resting site` (radius): Defined radius the animal has to stay in for a given duration of time for it to be considered resting site. Unit: `metres`.
-
-*Always include the "Store settings" setting as it will appear automatically in all shiny apps*
-`Store settings`: click to store the current settings of the App for future Workflow runs. 
+Store settings`: click to store the current settings of the App for future Workflow runs. 
 
 ### Changes in output data
-*Specify here how and if the App modifies the input data. Describe clearly what e.g. each additional column means.*
-
-*Examples:*
-
-The App adds to the input data the columns `Max_dist` and `Avg_dist`. They contain the maximum distance to the provided focal location and the average distance to it over all locations. 
-
-The App filterers the input data as selected by the user. 
-
-The output data is the outcome of the model applied to the input data. 
-
 The input data remains unchanged.
 
 ### Most common errors
