@@ -41,7 +41,7 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 **Date range filter (`date_range`):** Select the date range to filter the move2 dataset by. Note that the available date range will automatically update when different individuals are selected. Default is the entire available date range.
 
-**Number of lcoations filter (`number_locations`):** Select the number of locations to filter the move2 dataset by. Note that the maximum number of locations will automatically update when different individuals are selected. Default is the maximum number of locations.
+**Number of locations filter (`number_locations`):** Select the number of locations to filter the move2 dataset by. Note that the maximum number of locations will automatically update when different individuals are selected. Default is the maximum number of locations.
 
 **Remove individual (`delete`):** This button will remove the currently selected individual from the dataset. This feature was provided for data editing purposes where an individual's deployment was ended on Movebank and the user does not want to consider this indvidual for further inspection.
 
