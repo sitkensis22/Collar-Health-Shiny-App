@@ -59,29 +59,30 @@ shinyModuleUserInterface <- function(id, label) {
               column(6,
               uiOutput(ns("ui_data_alert_switch")))
             ),
-            tags$style(type = "text/css", "#info_table{margin-bottom: 5%;}"),  
-            DTOutput(ns("info_table")),
+          div(style = "margin-bottom: 5%;",
+              DTOutput(ns("info_table")), 
+          ),
             uiOutput(ns("ui_select_individual")),
             uiOutput(ns("ui_notification_type")),
             uiOutput(ns("ui_basemap_type")),
             uiOutput(ns("ui_data_filter")),
             conditionalPanel(
-              condition = "input.filter_toggle == 'Date'",
+              condition = "input.filter_toggle == 'Date'", ns = ns,
                 uiOutput(ns("ui_data_range"))
             ),
             conditionalPanel(
-              condition = "input.filter_toggle == 'Number of locations'",
+              condition = "input.filter_toggle == 'Number of locations'", ns = ns,
               uiOutput(ns("ui_nlocations"))
             ),
             h6("Data tools"),
             fluidRow(
               column(6,
                      # create ui for actionButton to remove individuals
-                     tags$style(type = "text/css", "#delete{margin-top: 5%; margin-bottom: 5%}"),   
-                     shiny::actionButton(inputId = ns("delete"), label = "Remove individual", class = "btn-warning")),
+                     div(style = "margin-bottom: 5%;",   
+                     shiny::actionButton(inputId = ns("delete"), label = "Remove individual", class = "btn-warning"))),
               column(6,
-                     tags$style(type = "text/css", "#movebank_link{margin-top: 5%; margin-bottom: 5%}"),
-                     shiny::actionButton(inputId = ns("movebank_link"), label = "Open movebank", class = "btn-info"))
+                     div(style = "margin-bottom: 5%;",
+                     shiny::actionButton(inputId = ns("movebank_link"), label = "Open movebank", class = "btn-info")))
       
             ),
             # data download features
@@ -90,11 +91,11 @@ shinyModuleUserInterface <- function(id, label) {
                 selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report"),
                             selected = "All")),
               column(6,
-                tags$style(type = "text/css", "#downloadData{margin-top: 15%}"),     
-                downloadButton(ns("downloadData"), "Download"))),
+                div(style = "margin-top: 15%;",     
+                downloadButton(ns("downloadData"), "Download")))),
             uiOutput(ns("ui_data_field_switch")),
             conditionalPanel(
-              condition = "input.data_toggle == '1'",
+              condition = "input.data_toggle == '1'", ns = ns,
               uiOutput(ns("ui_data_field_filter"))
             )
         ),
