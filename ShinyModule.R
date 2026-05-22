@@ -149,7 +149,7 @@ shinyModule <- function(input, output, session, data) {
       }  
   }) %>% bindEvent(input$alert_toggle)
   
-  # create swith to filter individuals by only those with event alerts
+  # create switch to filter individuals by only those with event alerts
   output$ui_data_alert_switch <- renderUI({
     input_switch(id = ns("alert_toggle"), label = "Filter by alerts", value = FALSE)
   })
