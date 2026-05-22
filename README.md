@@ -43,7 +43,7 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 
 
-`Store settings`: click to store the current settings of the App for future Workflow runs. 
+**`Store settings`**: click to store the current settings of the App for future Workflow runs. 
 
 ### Changes in output data
 The input data remains unchanged.
