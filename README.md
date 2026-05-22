@@ -26,9 +26,11 @@ The App should work for any kind of (location) data. However, the App is only me
 ### Artefacts
 None.
 
-The Download button enables a local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), or collar health report (as an HTML file) depending on the 'Select data' input. 
+The Download button enables a local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), or collar health report (as an HTML file) depending on the `Select data` input. 
 
 ### Settings 
+**Set mortality-specific filter:** This logical input acts as a switch to turn on mortality alert filtering based on idenfier(s) provided in the `mortality_id` input. 
+
 *Please list and define all settings that the App requires to be set by the App user, if necessary including their unit. Please state each of the settings that the user will encounter in the UI of the shiny app.*
 
 *Example:* `Radius of resting site` (radius): Defined radius the animal has to stay in for a given duration of time for it to be considered resting site. Unit: `metres`.
