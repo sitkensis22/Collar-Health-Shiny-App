@@ -79,7 +79,8 @@ shinyModuleUserInterface <- function(id, label) {
             # data download features
             fluidRow(
               column(6,
-                selectInput(ns("download_select"), label = "Select data", choices = c("All","Individual"))),
+                selectInput(ns("download_select"), label = "Select data", choices = c("All table" = "All","Individual table" = "Individual","Report"),
+                            selected = "All")),
               column(6,
                 tags$style(type = "text/css", "#downloadData{margin-top: 15%}"),     
                 downloadButton(ns("downloadData"), "Download CSV"))),
@@ -500,14 +501,50 @@ shinyModule <- function(input, output, session, data) {
               }
   })
   
-  # create leaflet map for plotting with choice of basemap
-  output$leafletMap <- renderLeaflet({
-    req(input$basemap_type,linesColor())
-    if(nrow(data_individual_notification()) > 0){
-      leaflet() %>% 
+# create leaflet map for plotting with choice of basemap
+leaf_map <- reactive({
+  req(input$basemap_type,linesColor())
+  if(nrow(data_individual_notification()) > 0){
+    map1 <- leaflet() %>% 
+      # add scale bar
+      addScaleBar(position = "bottomleft", 
+                  options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial= FALSE)) %>%   
+      # add user-selected basemap
+      addProviderTiles(basemap()) %>% 
+      # add track lines for individual
+      addPolylines(data = mt_track_lines(data_individual()),
+                   weight = 2,
+                   color = linesColor(),
+                   opacity = 0.8) %>%
+      # add all data points
+      addCircles(data = data_individual(),
+                 opacity = 0.3,
+                 label = ~timestamp,
+                 fillOpacity = 0.8,
+                 radius = 10, 
+                 color = "blue",
+                 fillColor = "blue") %>%
+      # add locations associated with selected notification
+      addCircles(data = data_individual_notification(),
+                 opacity = 0.8,
+                 label = ~timestamp,
+                 fillOpacity = 0.8, 
+                 radius = 10, 
+                 color = "#FF991C", 
+                 fillColor = "#FF991C")  %>%
+      # add locations to denote start and end of track
+      addCircleMarkers(data = data_individual() |> slice(c(1, n())),
+                       label = c("Start","End"),
+                       fillOpacity = 1,
+                       radius = 10,
+                       color = c("green","red"),
+                       fillColor = c("green","red"))
+  }else
+    if(nrow(data_individual_notification()) == 0){ 
+      map1 <- leaflet() %>% 
         # add scale bar
         addScaleBar(position = "bottomleft", 
-                    options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial= FALSE)) %>%   
+                    options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial = FALSE)) %>%   
         # add user-selected basemap
         addProviderTiles(basemap()) %>% 
         # add track lines for individual
@@ -523,14 +560,6 @@ shinyModule <- function(input, output, session, data) {
                    radius = 10, 
                    color = "blue",
                    fillColor = "blue") %>%
-        # add locations associated with selected notification
-        addCircles(data = data_individual_notification(),
-                   opacity = 0.8,
-                   label = ~timestamp,
-                   fillOpacity = 0.8, 
-                   radius = 10, 
-                   color = "#FF991C", 
-                   fillColor = "#FF991C")  %>%
         # add locations to denote start and end of track
         addCircleMarkers(data = data_individual() |> slice(c(1, n())),
                          label = c("Start","End"),
@@ -538,36 +567,24 @@ shinyModule <- function(input, output, session, data) {
                          radius = 10,
                          color = c("green","red"),
                          fillColor = c("green","red"))
-    }else
-      if(nrow(data_individual_notification()) == 0){ 
-        leaflet() %>% 
-          # add scale bar
-          addScaleBar(position = "bottomleft", 
-                      options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial = FALSE)) %>%   
-          # add user-selected basemap
-          addProviderTiles(basemap()) %>% 
-          # add track lines for individual
-          addPolylines(data = mt_track_lines(data_individual()),
-                       weight = 2,
-                       color = linesColor(),
-                       opacity = 0.8) %>%
-          # add all data points
-          addCircles(data = data_individual(),
-                     opacity = 0.3,
-                     label = ~timestamp,
-                     fillOpacity = 0.8,
-                     radius = 10, 
-                     color = "blue",
-                     fillColor = "blue") %>%
-          # add locations to denote start and end of track
-          addCircleMarkers(data = data_individual() |> slice(c(1, n())),
-                           label = c("Start","End"),
-                           fillOpacity = 1,
-                           radius = 10,
-                           color = c("green","red"),
-                           fillColor = c("green","red"))
-      }
+    }
+    return(map1)
+})
+
+  # now render leaflet map
+  output$leafletMap <- renderLeaflet({
+    leaf_map()
   })
+
+# store user-adjusted leaflet map (zoom, and coordinates)
+user_map <- reactive({
+  # call the Leaflet map
+  leaf_map() %>%
+  # store the view based on UI
+  setView(lng = input$leafletMap_center$lng,
+          lat = input$leafletMap_center$lat,
+          zoom = input$leafletMap_zoom)
+})    
   
   # update url link as individual ID changes
   observeEvent(input$movebank_link, {
@@ -821,16 +838,16 @@ shinyModule <- function(input, output, session, data) {
   output$downloadData <- downloadHandler(
     filename = function() {
       if(input$download_select == "All"){
-        paste("data-all_", Sys.Date(), ".csv", sep = "")
+      paste("data-all_", Sys.Date(), ".csv", sep = "")
       }else
       if(input$download_select == "Individual"){
-        paste("data-individual_", Sys.Date(), ".csv", sep = "")
+      paste("data-individual_", Sys.Date(), ".csv", sep = "")
       }else
       if(input$download_select == "Report"){
-        paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
+      paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
       }  
     },
-    content = function(file) {
+    content = function(file){
       if(input$download_select == "All"){
         write.csv(all_table_data(), file, row.names = FALSE)
       }else
@@ -838,10 +855,16 @@ shinyModule <- function(input, output, session, data) {
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
       if(input$download_select == "Report"){
-        src <- normalizePath('Collar-Health-Report.Rmd')
-        file.copy(src, 'report_word.Rmd', overwrite = TRUE) 
+        # save leaflet map as image to temp file
+        temp_dir <- tempdir()
+        mapshot2(user_map(), 
+                file = paste0(temp_dir,"/leaflet.png"))
+        out <- rmarkdown::render(input = 'Collar-Health-Report.Rmd', output_format = "html_document")
+        file.rename(out, file)
+      }
     }
   )
+
   # end of server
   
   # data must be returned. Either the unmodified input data, or the modified data by the app
