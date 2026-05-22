@@ -16,6 +16,7 @@ library("shinyjs")
 library("shinyWidgets")
 library("tidyverse")
 library("viridis")
+library("webshot")
 # webshot::install_phantomjs() ## add in docker images in moveapps: R -e 'webshot::install_phantomjs()' 
 
   # helper function 1
