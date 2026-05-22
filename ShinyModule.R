@@ -85,7 +85,7 @@ shinyModuleUserInterface <- function(id, label) {
             # data download features
             fluidRow(
               column(6,
-                selectInput(ns("download_select"), label = "Select data", choices = c("All table" = "All","Individual table" = "Individual","Report"),
+                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report"),
                             selected = "All")),
               column(6,
                 tags$style(type = "text/css", "#downloadData{margin-top: 15%}"),     
@@ -274,7 +274,7 @@ shinyModule <- function(input, output, session, data) {
   # select notification type
   output$ui_notification_type  <- renderUI({
     req(rv$table)
-    selectInput(ns("notification_type"), label = "Select event", 
+    selectInput(ns("notification_type"), label = "Select alert", 
                 choices = unique(rv$table$notification_type),
                 selected = unique(rv$table$notification_type)[1])
   })
