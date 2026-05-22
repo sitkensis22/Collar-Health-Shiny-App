@@ -4,7 +4,7 @@ Set of input data to test apps.
 - input1: 1 goat, median fix rate = 30mins, tracking duration 7.5 month, gps, local movement
 - input2: 3 storks, median fix rate = 1sec, tracking duration 2 weeks, gps, local movement
 - input3: 1 stork, median fix rate = 1h | 1day | 1 week, tracking duration 11.5 years, argos, includes migration
-- input4: 3 geese, median fix rate = 1h | 4h, tracking duration 1.5 years, gps, includes migration
+- input4: 3 geese, median fix rate = 1h | 4h, tracking duration 1.5 years, gps, includes migration | includes simulated mortality_status, gps_fix_type raw, and collar_end_type fields, and simulates a gps resurrection event for testing purposes. The dataset has been processed by the Collar Health Alert App and also includes alert fields and associated input alias and values (mortality, cluster, nsd, voltage, gps_acccuracy, gps_transmission, gps_resurrection, voltage_alias, voltage_value, gps_accuracy_prop, and nAlerts) in 'input4_move2loc_LatLon.rds' dataset
 
 *I/O types*
 - all data sets are provided as 'move2_loc'
