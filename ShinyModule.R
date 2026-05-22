@@ -512,67 +512,67 @@ leaf_map <- reactive({
   req(input$basemap_type,linesColor())
   if(nrow(data_individual_notification()) > 0){
     map1 <- leaflet() %>% 
-      # add scale bar
-      addScaleBar(position = "bottomleft", 
-                  options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial= FALSE)) %>%   
-      # add user-selected basemap
-      addProviderTiles(basemap()) %>% 
-      # add track lines for individual
-      addPolylines(data = mt_track_lines(data_individual()),
-                   weight = 2,
-                   color = linesColor(),
-                   opacity = 0.8) %>%
-      # add all data points
-      addCircles(data = data_individual(),
-                 opacity = 0.3,
-                 label = ~timestamp,
-                 fillOpacity = 0.8,
-                 radius = 10, 
-                 color = "blue",
-                 fillColor = "blue") %>%
-      # add locations associated with selected notification
-      addCircles(data = data_individual_notification(),
-                 opacity = 0.8,
-                 label = ~timestamp,
-                 fillOpacity = 0.8, 
-                 radius = 10, 
-                 color = "#FF991C", 
-                 fillColor = "#FF991C")  %>%
-      # add locations to denote start and end of track
-      addCircleMarkers(data = data_individual() |> slice(c(1, n())),
-                       label = c("Start","End"),
-                       fillOpacity = 1,
-                       radius = 10,
-                       color = c("green","red"),
-                       fillColor = c("green","red"))
+            # add scale bar
+            addScaleBar(position = "bottomleft", 
+                        options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial= FALSE)) %>%   
+            # add user-selected basemap
+            addProviderTiles(basemap()) %>% 
+            # add track lines for individual
+            addPolylines(data = mt_track_lines(data_individual()),
+                         weight = 2,
+                         color = linesColor(),
+                         opacity = 0.8) %>%
+            # add all data points
+            addCircles(data = data_individual(),
+                       opacity = 0.3,
+                       label = ~timestamp,
+                       fillOpacity = 0.8,
+                       radius = 10, 
+                       color = "blue",
+                       fillColor = "blue") %>%
+            # add locations associated with selected notification
+            addCircles(data = data_individual_notification(),
+                       opacity = 0.8,
+                       label = ~timestamp,
+                       fillOpacity = 0.8, 
+                       radius = 10, 
+                       color = "#FF991C", 
+                       fillColor = "#FF991C")  %>%
+            # add locations to denote start and end of track
+            addCircleMarkers(data = data_individual() |> slice(c(1, n())),
+                             label = c("Start","End"),
+                             fillOpacity = 1,
+                             radius = 10,
+                             color = c("green","red"),
+                             fillColor = c("green","red"))
   }else
     if(nrow(data_individual_notification()) == 0){ 
       map1 <- leaflet() %>% 
-        # add scale bar
-        addScaleBar(position = "bottomleft", 
-                    options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial = FALSE)) %>%   
-        # add user-selected basemap
-        addProviderTiles(basemap()) %>% 
-        # add track lines for individual
-        addPolylines(data = mt_track_lines(data_individual()),
-                     weight = 2,
-                     color = linesColor(),
-                     opacity = 0.8) %>%
-        # add all data points
-        addCircles(data = data_individual(),
-                   opacity = 0.3,
-                   label = ~timestamp,
-                   fillOpacity = 0.8,
-                   radius = 10, 
-                   color = "blue",
-                   fillColor = "blue") %>%
-        # add locations to denote start and end of track
-        addCircleMarkers(data = data_individual() |> slice(c(1, n())),
-                         label = c("Start","End"),
-                         fillOpacity = 1,
-                         radius = 10,
-                         color = c("green","red"),
-                         fillColor = c("green","red"))
+              # add scale bar
+              addScaleBar(position = "bottomleft", 
+                          options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial = FALSE)) %>%   
+              # add user-selected basemap
+              addProviderTiles(basemap()) %>% 
+              # add track lines for individual
+              addPolylines(data = mt_track_lines(data_individual()),
+                           weight = 2,
+                           color = linesColor(),
+                           opacity = 0.8) %>%
+              # add all data points
+              addCircles(data = data_individual(),
+                         opacity = 0.3,
+                         label = ~timestamp,
+                         fillOpacity = 0.8,
+                         radius = 10, 
+                         color = "blue",
+                         fillColor = "blue") %>%
+              # add locations to denote start and end of track
+              addCircleMarkers(data = data_individual() |> slice(c(1, n())),
+                               label = c("Start","End"),
+                               fillOpacity = 1,
+                               radius = 10,
+                               color = c("green","red"),
+                               fillColor = c("green","red"))
     }
     return(map1)
 })
@@ -592,252 +592,252 @@ user_map <- reactive({
           zoom = input$leafletMap_zoom)
 })    
   
-  # update url link as individual ID changes
-  observeEvent(input$movebank_link, {
-    req(data_individual())
-    # store study id from track data
-    movebank_studyID <- mt_track_data(data_individual()) |> dplyr::select(study_id)
-    # store individual id from track data
-    movebank_individualID <- mt_track_data(data_individual()) |> dplyr::select(individual_id)
-    # get deployment id fromt rack data
-    movebank_deploymentID <- mt_track_data(data_individual()) |> dplyr::select(deployment_id)
-    # store movebank link
-    collar_link <- paste0("window.open('","https://www.movebank.org/cms/webapp?gwt_fragment=page=studies,path=study",movebank_studyID$study_id,"+individual",movebank_individualID$individual_id,"+deployment",movebank_deploymentID$deployment_id,"')")
-    # now open web page when button is clicked
-    shinyjs::runjs(collar_link)
-  })
-  
-  # plot for alert based notification event type
-  output$notification_plot <- renderPlotly({
-    req(data_individual(),input$notification_type)
-    # make a null plot if there are no events to plot
-    if(unique(data_individual()$nAlerts) == 0){
-    ggplot() + theme_void()
+# update url link as individual ID changes
+observeEvent(input$movebank_link, {
+  req(data_individual())
+  # store study id from track data
+  movebank_studyID <- mt_track_data(data_individual()) |> dplyr::select(study_id)
+  # store individual id from track data
+  movebank_individualID <- mt_track_data(data_individual()) |> dplyr::select(individual_id)
+  # get deployment id fromt rack data
+  movebank_deploymentID <- mt_track_data(data_individual()) |> dplyr::select(deployment_id)
+  # store movebank link
+  collar_link <- paste0("window.open('","https://www.movebank.org/cms/webapp?gwt_fragment=page=studies,path=study",movebank_studyID$study_id,"+individual",movebank_individualID$individual_id,"+deployment",movebank_deploymentID$deployment_id,"')")
+  # now open web page when button is clicked
+  shinyjs::runjs(collar_link)
+})
+
+# plot for alert based notification event type
+output$notification_plot <- renderPlotly({
+  req(data_individual(),input$notification_type)
+  # make a null plot if there are no events to plot
+if(unique(data_individual()$nAlerts) == 0){
+  ggplot() + theme_void()
+}else
+  # store plot colors
+  plot_color <- magma(100)[c(30,70)]
+  if(input$notification_type == "mortality" & unique(data_individual()$nAlerts) > 0){
+  # make time series plot that adjusts based on notification type
+  plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
+  # rename first column to timestamp
+  colnames(plot_data)[1] = "timestamp"
+  # create mortality status as a factor based on event indicator variable
+  plot_data$mortality_status <- character(nrow(plot_data))
+  plot_data$mortality_status[which(plot_data$mortality == 1)] <- "Mortality"
+  plot_data$mortality_status[which(plot_data$mortality == 0)] <- "Nothing detected"
+  # now convert to a factor
+  plot_data$mortality_status <- as.factor(plot_data$mortality_status)
+  # reset levels
+  plot_data$mortality_status <- relevel(plot_data$mortality_status, ref = "Nothing detected")
+  gg1 <- ggplot(plot_data, aes(x = timestamp, y = mortality, group = mortality_status,
+                           color = mortality_status,
+                           text = paste("</br>Date:",timestamp,
+                                        "</br>Status:",mortality_status))) + 
+  geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
+  xlab("Date") + ylab("Mortality indicator") + theme_bw() +
+  theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
+      axis.text.y = element_text(size = 16),
+      axis.title.x = element_text(size = 20),
+      axis.title.y = element_text(size = 20),
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 18)) +
+  guides(color=guide_legend(title="Mortality status")) 
+  ggplotly(gg1, tooltip = c("text")) %>%
+  layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
+}else
+if(input$notification_type == "cluster"& unique(data_individual()$nAlerts) > 0){
+  # make time series plot that adjusts based on notification type
+  plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
+  # rename first column to timestamp
+  colnames(plot_data)[1] = "timestamp"
+  # create cluster status as a factor on event indicator variable
+  plot_data$cluster_status <- character(nrow(plot_data))
+  plot_data$cluster_status[which(plot_data$cluster == 1)] <- "In cluster"
+  plot_data$cluster_status[which(plot_data$cluster == 0)] <- "Not in cluster"
+  # now convert to a factor
+  plot_data$cluster_status <- as.factor(plot_data$cluster_status)
+  # reset levels
+  plot_data$cluster_status <- relevel(plot_data$cluster_status, ref = "Not in cluster")
+  gg2 <- ggplot(plot_data, aes(x = timestamp, y = cluster, group = cluster_status,
+                             color = cluster_status,
+                             text = paste("</br>Date:",timestamp,
+                                          "</br>Status:",cluster_status))) + 
+  geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
+  xlab("Date") + ylab("Cluster indicator") + theme_bw() +
+  theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 18)) +
+  guides(color=guide_legend(title="Cluster status")) 
+  ggplotly(gg2, tooltip = c("text")) %>%
+  layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
+}else
+if(input$notification_type == "nsd"& unique(data_individual()$nAlerts) > 0){
+    # make time series plot that adjusts based on notification type
+    plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
+    # rename first column to timestamp
+    colnames(plot_data)[1] = "timestamp"
+    # create nsd status as a factor based on event indicator variable
+    plot_data$nsd_status <- character(nrow(plot_data))
+    plot_data$nsd_status[which(plot_data$nsd == 1)] <- "Above max NSD"
+    plot_data$nsd_status[which(plot_data$nsd == 0)] <- "Not above max NSD"
+    # now convert to a factor
+    plot_data$nsd_status <- as.factor(plot_data$nsd_status)
+    # reset levels
+    plot_data$nsd_status <- relevel(plot_data$nsd_status, ref = "Not above max NSD")
+    gg3 <- ggplot(plot_data, aes(x = timestamp, y = nsd, group = nsd_status,
+                                 color = nsd_status,
+                                 text = paste("</br>Date:",timestamp,
+                                              "</br>Status:", nsd_status))) + 
+    geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
+    xlab("Date") + ylab("NSD indicator") + theme_bw() +
+    theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
+          axis.text.y = element_text(size = 16),
+          axis.title.x = element_text(size = 20),
+          axis.title.y = element_text(size = 20),
+          legend.text = element_text(size = 14),
+          legend.title = element_text(size = 18)) +
+    guides(color=guide_legend(title="NSD status")) 
+  ggplotly(gg3, tooltip = c("text")) %>%
+    layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
+}else
+if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0){
+    # make time series plot that adjusts based on notification type
+    plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),
+                                input$notification_type,data_individual()$voltage_alias[1]) 
+    # rename first column to timestamp
+    colnames(plot_data)[1] = "timestamp"
+    # create voltage status as a factor based on FID
+    plot_data$voltage_status <- character(nrow(plot_data))
+    plot_data$voltage_status[which(plot_data$voltage == 1)] <- "At or below threshold"
+    plot_data$voltage_status[which(plot_data$voltage == 0)] <- "Above threshold"
+    # now convert to a factor
+    plot_data$voltage_status <- as.factor(plot_data$voltage_status)
+    # reset levels
+    plot_data$voltage_status <- relevel(plot_data$voltage_status, ref = "Above threshold")
+    # remove NA values that are present
+    if(any(is.na(plot_data[,data_individual()$voltage_alias[1]]))){
+    plot_data <- plot_data |> filter(is.na(.data[[data_individual()$voltage_alias[1]]]) == FALSE)
+    }
+    # store quantile if voltage value == ""
+    if(data_individual()$voltage_value[1] == ""){
+      voltage_value <- quantile(as.numeric(plot_data[,data_individual()$voltage_alias[1]]), probs = 0.25, na.rm = TRUE)
     }else
-    # store plot colors
-      plot_color <- magma(100)[c(30,70)]
-    if(input$notification_type == "mortality" & unique(data_individual()$nAlerts) > 0){
+    if(data_individual()$voltage_value[1] < 1){
+      voltage_value <- quantile(as.numeric(plot_data[,data_individual()$voltage_alias[1]]), probs = data_individual()$voltage_value[1], na.rm = TRUE)
+    }else
+    if(data_individual()$voltage_value[1] >= 1){   
+      voltage_value = data_individual()$voltage_value[1]
+    }
+    gg4 <- ggplot(plot_data, aes(x = timestamp, y = as.numeric(tag_voltage), group = voltage_status,
+                                 color = voltage_status, 
+                                 text = paste("</br>Date:",timestamp,
+                                              "</br>Status:", voltage_status,
+                                              "</br>Voltage:", tag_voltage))) + 
+    geom_hline(yintercept = voltage_value, color = "gray60", linewidth = 1, linetype = "dotted") +
+    geom_point() + scale_color_manual(values = plot_color) +
+    xlab("Date") + ylab("Voltage (mV)") + theme_bw() +
+    theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
+          axis.text.y = element_text(size = 16),
+          axis.title.x = element_text(size = 20),
+          axis.title.y = element_text(size = 20),
+          legend.text = element_text(size = 14),
+          legend.title = element_text(size = 18)) +
+    guides(color=guide_legend(title="Voltage status")) 
+  ggplotly(gg4, tooltip = c("text")) %>%
+    layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
+}else
+  if(input$notification_type == "gps_accuracy" & unique(data_individual()$nAlerts) > 0){
+    # make time series plot that adjusts based on notification type
+    plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
+    # rename first column to timestamp
+    colnames(plot_data)[1] = "timestamp"
+    # create gps_accuracy as a factor on event indicator variable
+    plot_data$gps_accuracy_status <- character(nrow(plot_data))
+    plot_data$gps_accuracy_status[which(plot_data$gps_accuracy == 1)] <- "2D GPS Fix or failed"
+    plot_data$gps_accuracy_status[which(plot_data$gps_accuracy == 0)] <- "3D GPS Fix"
+    # now convert to a factor
+    plot_data$gps_accuracy_status <- as.factor(plot_data$gps_accuracy_status)
+    # reset levels
+    plot_data$gps_accuracy_status <- relevel(plot_data$gps_accuracy_status, ref = "2D GPS Fix or failed")
+    gg5 <- ggplot(plot_data, aes(x = timestamp, y = gps_accuracy, group = gps_accuracy_status,
+                                 color = gps_accuracy_status,
+                                 text = paste("</br>Date:",timestamp,
+                                              "</br>Status:",gps_accuracy_status))) + 
+      geom_hline(yintercept = data_individual()$gps_accuracy_prop[1], color = "gray60", linewidth = 1, linetype = "dotted") +
+      geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
+      xlab("Date") + ylab("GPS accuracy indicator") + theme_bw() +
+      theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
+            axis.text.y = element_text(size = 16),
+            axis.title.x = element_text(size = 20),
+            axis.title.y = element_text(size = 20),
+            legend.text = element_text(size = 14),
+            legend.title = element_text(size = 18)) +
+      guides(color=guide_legend(title="GPS accuracy status")) 
+    ggplotly(gg5, tooltip = c("text")) %>%
+      layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
+  }else
+  if(input$notification_type == "gps_transmission" & unique(data_individual()$nAlerts) > 0){
       # make time series plot that adjusts based on notification type
       plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
       # rename first column to timestamp
       colnames(plot_data)[1] = "timestamp"
-      # create mortality status as a factor based on event indicator variable
-      plot_data$mortality_status <- character(nrow(plot_data))
-      plot_data$mortality_status[which(plot_data$mortality == 1)] <- "Mortality"
-      plot_data$mortality_status[which(plot_data$mortality == 0)] <- "Nothing detected"
+      # create gps_transmission as a factor on event indicator variable
+      plot_data$gps_transmission_status <- character(nrow(plot_data))
+      plot_data$gps_transmission_status[which(plot_data$gps_transmission == 1)] <- "Transmission gap"
+      plot_data$gps_transmission_status[which(plot_data$gps_transmission == 0)] <- "Normal transmission"
       # now convert to a factor
-      plot_data$mortality_status <- as.factor(plot_data$mortality_status)
+      plot_data$gps_transmission_status <- as.factor(plot_data$gps_transmission_status)
       # reset levels
-      plot_data$mortality_status <- relevel(plot_data$mortality_status, ref = "Nothing detected")
-      gg1 <- ggplot(plot_data, aes(x = timestamp, y = mortality, group = mortality_status,
-                                   color = mortality_status,
+      plot_data$gps_transmission_status <- relevel(plot_data$gps_transmission_status, ref = "Normal transmission")
+      gg6 <- ggplot(plot_data, aes(x = timestamp, y = gps_transmission, group = gps_transmission_status,
+                                   color = gps_transmission_status,
                                    text = paste("</br>Date:",timestamp,
-                                                "</br>Status:",mortality_status))) + 
+                                                "</br>Status:",gps_transmission_status))) + 
+      geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
+      xlab("Date") + ylab("GPS transmission indicator") + theme_bw() +
+      theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
+            axis.text.y = element_text(size = 16),
+            axis.title.x = element_text(size = 20),
+            axis.title.y = element_text(size = 20),
+            legend.text = element_text(size = 14),
+            legend.title = element_text(size = 18)) +
+      guides(color=guide_legend(title="GPS transmission status")) 
+    ggplotly(gg6, tooltip = c("text")) %>%
+      layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
+  }else
+    if(input$notification_type == "gps_resurrection" & unique(data_individual()$nAlerts) > 0){
+      # make time series plot that adjusts based on notification type
+      plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
+      # rename first column to timestamp
+      colnames(plot_data)[1] = "timestamp"
+      # create gps_transmission as a factor on event indicator variable
+      plot_data$gps_resurrection_status <- character(nrow(plot_data))
+      plot_data$gps_resurrection_status[which(plot_data$gps_resurrection == 1)] <- "Resurrected"
+      plot_data$gps_resurrection_status[which(plot_data$gps_resurrection == 0)] <- "Normal transmission"
+      # now convert to a factor
+      plot_data$gps_resurrection_status <- as.factor(plot_data$gps_resurrection_status)
+      # reset levels
+      plot_data$gps_resurrection_status <- relevel(plot_data$gps_resurrection_status, ref = "Normal transmission")
+      gg7 <- ggplot(plot_data, aes(x = timestamp, y = gps_resurrection, group = gps_resurrection_status,
+                                   color = gps_resurrection_status,
+                                   text = paste("</br>Date:",timestamp,
+                                                "</br>Status:",gps_resurrection_status))) + 
         geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
-        xlab("Date") + ylab("Mortality indicator") + theme_bw() +
+        xlab("Date") + ylab("GPS resurrection indicator") + theme_bw() +
         theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
               axis.text.y = element_text(size = 16),
               axis.title.x = element_text(size = 20),
               axis.title.y = element_text(size = 20),
               legend.text = element_text(size = 14),
               legend.title = element_text(size = 18)) +
-        guides(color=guide_legend(title="Mortality status")) 
-      ggplotly(gg1, tooltip = c("text")) %>%
-        layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
-    }else
-      if(input$notification_type == "cluster"& unique(data_individual()$nAlerts) > 0){
-        # make time series plot that adjusts based on notification type
-        plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
-        # rename first column to timestamp
-        colnames(plot_data)[1] = "timestamp"
-        # create cluster status as a factor on event indicator variable
-        plot_data$cluster_status <- character(nrow(plot_data))
-        plot_data$cluster_status[which(plot_data$cluster == 1)] <- "In cluster"
-        plot_data$cluster_status[which(plot_data$cluster == 0)] <- "Not in cluster"
-        # now convert to a factor
-        plot_data$cluster_status <- as.factor(plot_data$cluster_status)
-        # reset levels
-        plot_data$cluster_status <- relevel(plot_data$cluster_status, ref = "Not in cluster")
-        gg2 <- ggplot(plot_data, aes(x = timestamp, y = cluster, group = cluster_status,
-                                     color = cluster_status,
-                                     text = paste("</br>Date:",timestamp,
-                                                  "</br>Status:",cluster_status))) + 
-          geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
-          xlab("Date") + ylab("Cluster indicator") + theme_bw() +
-          theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
-                axis.text.y = element_text(size = 16),
-                axis.title.x = element_text(size = 20),
-                axis.title.y = element_text(size = 20),
-                legend.text = element_text(size = 14),
-                legend.title = element_text(size = 18)) +
-          guides(color=guide_legend(title="Cluster status")) 
-        ggplotly(gg2, tooltip = c("text")) %>%
-          layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
-      }else
-        if(input$notification_type == "nsd"& unique(data_individual()$nAlerts) > 0){
-          # make time series plot that adjusts based on notification type
-          plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
-          # rename first column to timestamp
-          colnames(plot_data)[1] = "timestamp"
-          # create nsd status as a factor based on event indicator variable
-          plot_data$nsd_status <- character(nrow(plot_data))
-          plot_data$nsd_status[which(plot_data$nsd == 1)] <- "Above max NSD"
-          plot_data$nsd_status[which(plot_data$nsd == 0)] <- "Not above max NSD"
-          # now convert to a factor
-          plot_data$nsd_status <- as.factor(plot_data$nsd_status)
-          # reset levels
-          plot_data$nsd_status <- relevel(plot_data$nsd_status, ref = "Not above max NSD")
-          gg3 <- ggplot(plot_data, aes(x = timestamp, y = nsd, group = nsd_status,
-                                       color = nsd_status,
-                                       text = paste("</br>Date:",timestamp,
-                                                    "</br>Status:", nsd_status))) + 
-            geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
-            xlab("Date") + ylab("NSD indicator") + theme_bw() +
-            theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
-                  axis.text.y = element_text(size = 16),
-                  axis.title.x = element_text(size = 20),
-                  axis.title.y = element_text(size = 20),
-                  legend.text = element_text(size = 14),
-                  legend.title = element_text(size = 18)) +
-            guides(color=guide_legend(title="NSD status")) 
-          ggplotly(gg3, tooltip = c("text")) %>%
-            layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
-        }else
-          if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0){
-            # make time series plot that adjusts based on notification type
-            plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),
-                                        input$notification_type,data_individual()$voltage_alias[1]) 
-            # rename first column to timestamp
-            colnames(plot_data)[1] = "timestamp"
-            # create voltage status as a factor based on FID
-            plot_data$voltage_status <- character(nrow(plot_data))
-            plot_data$voltage_status[which(plot_data$voltage == 1)] <- "At or below threshold"
-            plot_data$voltage_status[which(plot_data$voltage == 0)] <- "Above threshold"
-            # now convert to a factor
-            plot_data$voltage_status <- as.factor(plot_data$voltage_status)
-            # reset levels
-            plot_data$voltage_status <- relevel(plot_data$voltage_status, ref = "Above threshold")
-            # remove NA values that are present
-            if(any(is.na(plot_data[,data_individual()$voltage_alias[1]]))){
-            plot_data <- plot_data |> filter(is.na(.data[[data_individual()$voltage_alias[1]]]) == FALSE)
-            }
-            # store quantile if voltage value == ""
-            if(data_individual()$voltage_value[1] == ""){
-              voltage_value <- quantile(as.numeric(plot_data[,data_individual()$voltage_alias[1]]), probs = 0.25, na.rm = TRUE)
-            }else
-            if(data_individual()$voltage_value[1] < 1){
-              voltage_value <- quantile(as.numeric(plot_data[,data_individual()$voltage_alias[1]]), probs = data_individual()$voltage_value[1], na.rm = TRUE)
-            }else
-            if(data_individual()$voltage_value[1] >= 1){   
-              voltage_value = data_individual()$voltage_value[1]
-            }
-            gg4 <- ggplot(plot_data, aes(x = timestamp, y = as.numeric(tag_voltage), group = voltage_status,
-                                         color = voltage_status, 
-                                         text = paste("</br>Date:",timestamp,
-                                                      "</br>Status:", voltage_status,
-                                                      "</br>Voltage:", tag_voltage))) + 
-              geom_hline(yintercept = voltage_value, color = "gray60", linewidth = 1, linetype = "dotted") +
-              geom_point() + scale_color_manual(values = plot_color) +
-              xlab("Date") + ylab("Voltage (mV)") + theme_bw() +
-              theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
-                    axis.text.y = element_text(size = 16),
-                    axis.title.x = element_text(size = 20),
-                    axis.title.y = element_text(size = 20),
-                    legend.text = element_text(size = 14),
-                    legend.title = element_text(size = 18)) +
-              guides(color=guide_legend(title="Voltage status")) 
-            ggplotly(gg4, tooltip = c("text")) %>%
-              layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
-          }else
-            if(input$notification_type == "gps_accuracy" & unique(data_individual()$nAlerts) > 0){
-              # make time series plot that adjusts based on notification type
-              plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
-              # rename first column to timestamp
-              colnames(plot_data)[1] = "timestamp"
-              # create gps_accuracy as a factor on event indicator variable
-              plot_data$gps_accuracy_status <- character(nrow(plot_data))
-              plot_data$gps_accuracy_status[which(plot_data$gps_accuracy == 1)] <- "2D GPS Fix or failed"
-              plot_data$gps_accuracy_status[which(plot_data$gps_accuracy == 0)] <- "3D GPS Fix"
-              # now convert to a factor
-              plot_data$gps_accuracy_status <- as.factor(plot_data$gps_accuracy_status)
-              # reset levels
-              plot_data$gps_accuracy_status <- relevel(plot_data$gps_accuracy_status, ref = "2D GPS Fix or failed")
-              gg5 <- ggplot(plot_data, aes(x = timestamp, y = gps_accuracy, group = gps_accuracy_status,
-                                           color = gps_accuracy_status,
-                                           text = paste("</br>Date:",timestamp,
-                                                        "</br>Status:",gps_accuracy_status))) + 
-                geom_hline(yintercept = data_individual()$gps_accuracy_prop[1], color = "gray60", linewidth = 1, linetype = "dotted") +
-                geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
-                xlab("Date") + ylab("GPS accuracy indicator") + theme_bw() +
-                theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
-                      axis.text.y = element_text(size = 16),
-                      axis.title.x = element_text(size = 20),
-                      axis.title.y = element_text(size = 20),
-                      legend.text = element_text(size = 14),
-                      legend.title = element_text(size = 18)) +
-                guides(color=guide_legend(title="GPS accuracy status")) 
-              ggplotly(gg5, tooltip = c("text")) %>%
-                layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
-            }else
-              if(input$notification_type == "gps_transmission" & unique(data_individual()$nAlerts) > 0){
-                # make time series plot that adjusts based on notification type
-                plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
-                # rename first column to timestamp
-                colnames(plot_data)[1] = "timestamp"
-                # create gps_transmission as a factor on event indicator variable
-                plot_data$gps_transmission_status <- character(nrow(plot_data))
-                plot_data$gps_transmission_status[which(plot_data$gps_transmission == 1)] <- "Transmission gap"
-                plot_data$gps_transmission_status[which(plot_data$gps_transmission == 0)] <- "Normal transmission"
-                # now convert to a factor
-                plot_data$gps_transmission_status <- as.factor(plot_data$gps_transmission_status)
-                # reset levels
-                plot_data$gps_transmission_status <- relevel(plot_data$gps_transmission_status, ref = "Normal transmission")
-                gg6 <- ggplot(plot_data, aes(x = timestamp, y = gps_transmission, group = gps_transmission_status,
-                                             color = gps_transmission_status,
-                                             text = paste("</br>Date:",timestamp,
-                                                          "</br>Status:",gps_transmission_status))) + 
-                  geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
-                  xlab("Date") + ylab("GPS transmission indicator") + theme_bw() +
-                  theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
-                        axis.text.y = element_text(size = 16),
-                        axis.title.x = element_text(size = 20),
-                        axis.title.y = element_text(size = 20),
-                        legend.text = element_text(size = 14),
-                        legend.title = element_text(size = 18)) +
-                  guides(color=guide_legend(title="GPS transmission status")) 
-                ggplotly(gg6, tooltip = c("text")) %>%
-                  layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
-              }else
-                if(input$notification_type == "gps_resurrection" & unique(data_individual()$nAlerts) > 0){
-                  # make time series plot that adjusts based on notification type
-                  plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
-                  # rename first column to timestamp
-                  colnames(plot_data)[1] = "timestamp"
-                  # create gps_transmission as a factor on event indicator variable
-                  plot_data$gps_resurrection_status <- character(nrow(plot_data))
-                  plot_data$gps_resurrection_status[which(plot_data$gps_resurrection == 1)] <- "Resurrected"
-                  plot_data$gps_resurrection_status[which(plot_data$gps_resurrection == 0)] <- "Normal transmission"
-                  # now convert to a factor
-                  plot_data$gps_resurrection_status <- as.factor(plot_data$gps_resurrection_status)
-                  # reset levels
-                  plot_data$gps_resurrection_status <- relevel(plot_data$gps_resurrection_status, ref = "Normal transmission")
-                  gg7 <- ggplot(plot_data, aes(x = timestamp, y = gps_resurrection, group = gps_resurrection_status,
-                                               color = gps_resurrection_status,
-                                               text = paste("</br>Date:",timestamp,
-                                                            "</br>Status:",gps_resurrection_status))) + 
-                    geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
-                    xlab("Date") + ylab("GPS resurrection indicator") + theme_bw() +
-                    theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
-                          axis.text.y = element_text(size = 16),
-                          axis.title.x = element_text(size = 20),
-                          axis.title.y = element_text(size = 20),
-                          legend.text = element_text(size = 14),
-                          legend.title = element_text(size = 18)) +
-                    guides(color=guide_legend(title="GPS resurrection status")) 
-                  ggplotly(gg7, tooltip = c("text")) %>%
-                    layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))  
-                }
-                # end of plots   
+        guides(color=guide_legend(title="GPS resurrection status")) 
+      ggplotly(gg7, tooltip = c("text")) %>%
+        layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))  
+    }
+    # end of plots   
   })
   
   # download data functions
@@ -865,7 +865,7 @@ user_map <- reactive({
         temp_dir <- tempdir()
         mapshot2(user_map(), 
                 file = paste0(temp_dir,"/leaflet.png"))
-        out <- rmarkdown::render(input = 'Collar-Health-Report.Rmd', output_format = "html_document")
+        out <- rmarkdown::render(input = getAuxiliaryFilePath("aux_A/Collar-Health-Report.Rmd', output_format = "html_document")
         file.rename(out, file)
       }
     }
