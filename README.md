@@ -29,10 +29,14 @@ None.
 The Download button enables a local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), or collar health report (as an HTML file) depending on the `Select data` input. 
 
 ### Settings 
-**Select individual (`individual_select`):** Select the individual based on the track id column in the move2 dataset. Note that the individual can also be selected by clicking on the "Track information" or "All data" table rows.
+**Select individual (`individual_select`):** Select the individual based on the track id column in the move2 dataset. Note that the individual can also be selected by clicking on "Track information" or "All data" table rows.
+
+**Alert toggle (`alert_toggle`):** This switch filters the individuals in the data based on if they have any alerts or not. 
+
+**Select alert (`notification_type`):** Select the alert to display in the Leaflet map, "Individual data" table, and Event plot tabs. Note that this dropdown menu will automatically update based on the selected individual.  
 
 
-Store settings`: click to store the current settings of the App for future Workflow runs. 
+`Store settings`: click to store the current settings of the App for future Workflow runs. 
 
 ### Changes in output data
 The input data remains unchanged.
