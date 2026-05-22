@@ -47,8 +47,6 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 **Open Movebank (`movebank_link`):** This button will open a new webpage tab of the currenly selected individual's deployment page on Movebank. Note that the user must be logged in to Movebank for this page to appear properly, which is recommended before the App is run and data editing commences. 
 
-
-
 **Store UI settings (`Store settings`):** Click to store the current settings of the App for future Workflow runs. 
 
 ### Changes in output data
