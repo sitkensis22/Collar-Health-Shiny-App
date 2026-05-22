@@ -26,7 +26,7 @@ The App should work for any kind of (location) data. However, the App is only me
 ### Artefacts
 None.
 
-The Download button enables a local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), or collar health report (as an HTML file) depending on the `Select data` input. 
+The Download button enables a local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), or collar health report (as an HTML file) depending on the `Select output` input. 
 
 ### Settings 
 **Alert toggle (`alert_toggle`):** This switch filters the individuals in the data based on if they have any alerts or not. Defaults to selecting all data. 
@@ -37,7 +37,7 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 **Select basemap (`basemap_type`):** Select provider basemap for Leaflet map tab. Options include: World Imagery, World Topo Map, World Street Map, NatGeo World Map, OpenStreet Map, and OpenStreet Topo Map. Default is World Imagery.
 
-**Data filter toggle (`data_toggle`):** This switch filters the individual's data by either a date range or number of locations. Depending on the position of the toggle, a conditional panel will appear for either the date range or number of location data filters. Default is to filter by date range. 
+**Data filter toggle (`filter_toggle`):** This switch filters the individual's data by either a date range or number of locations. Depending on the position of the toggle, a conditional panel will appear for either the date range or number of location data filters. Default is to filter by date range. 
 
 **Date range filter (`date_range`):** Select the date range to filter the move2 dataset by. Note that the available date range will automatically update when different individuals are selected. Default is the entire available date range.
 
@@ -47,17 +47,15 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 **Open Movebank (`movebank_link`):** This button will open a new webpage tab of the currenly selected individual's deployment page on Movebank. Note that the user must be logged into Movebank for this page to appear properly, which is recommended before the App is run and data editing commences. 
 
+**Select output (`download_select`):** Select the local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), or collar health report (as an HTML file), with respective options being "All table", "Individual table", or "Report". Default is "All table". 
 
+**Download (`downloadData`):** This button will initiate the local download that is selected from the `download_select` dropdown menu.
+
+**Show data fields toggle (`data_toggle`):** This switch will toggle the check boxes to select data fields to display in the "Individual data" table. Default is to show to available data fields. 
+
+**Select data fields (`data_fields`):** Select the data fields to display in the "Individual data" table. Defaults to the track id, device_id, Latitude, Longitude, timestamp, alert (currently selected), and mortality_status. 
 
 **Store UI settings (`Store settings`):** Click to store the current settings of the App for future Workflow runs. 
 
 ### Changes in output data
 The input data remains unchanged.
-
-### Most common errors
-*Please describe shortly what most common errors of the App can be, how they occur and best ways of solving them.*
-
-### Null or error handling
-*Please indicate for each setting as well as the input data which behaviour the App is supposed to show in case of errors or NULL values/input. Please also add notes of possible errors that can happen if settings/parameters are improperly set and any other important information that you find the user should be aware of.*
-
-*Example:* **Setting `radius`:** If no radius AND no duration are given, the input data set is returned with a warning. If no radius is given (NULL), but a duration is defined then a default radius of 1000m = 1km is set. 
