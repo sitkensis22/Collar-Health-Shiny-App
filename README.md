@@ -45,7 +45,7 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 **Remove individual (`delete`):** This button will remove the currently selected individual from the dataset. This feature was provided for data editing purposes where an individual's deployment was ended on Movebank and the user does not want to consider this indvidual for further inspection.
 
-**Open Movebank (`movebank_link`):** This button will open a new webpage tab of the currenly selected individual's deployment page on Movebank. Note that the user must be logged in to Movebank for this page to appear properly, which is recommended before the App is run and data editing commences. 
+**Open Movebank (`movebank_link`):** This button will open a new webpage tab of the currenly selected individual's deployment page on Movebank. Note that the user must be logged into Movebank for this page to appear properly, which is recommended before the App is run and data editing commences. 
 
 
 
