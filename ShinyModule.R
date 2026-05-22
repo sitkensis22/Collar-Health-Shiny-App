@@ -102,8 +102,7 @@ shinyModuleUserInterface <- function(id, label) {
           tabsetPanel(
             # tabPanel 1 - Leaflet map
             tabPanel(title = "Map",
-              tags$style(type = "text/css", "#leafletMap {height: 80vh !important;}"),
-              leafletOutput(ns("leafletMap"))),
+              leafletOutput(ns("leafletMap"),width = "100%", height = "80vh")),
             # tabPanel 2 - All data table   
             tabPanel(title = "All data", 
               DTOutput(ns("all_table"))),
