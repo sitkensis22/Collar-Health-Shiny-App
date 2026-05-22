@@ -37,13 +37,19 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 **Select basemap (`basemap_type`):** Select provider basemap for Leaflet map tab. Options include: World Imagery, World Topo Map, World Street Map, NatGeo World Map, OpenStreet Map, and OpenStreet Topo Map. Default is World Imagery.
 
-**Data filter toggle (`data_toggle`):** This switch filters the individual's data by either a date range or number of locations. Default is to filter by date range. Depending on the position of the toggle, a conditional panel will appear for either the date range or number of location data filters. 
+**Data filter toggle (`data_toggle`):** This switch filters the individual's data by either a date range or number of locations. Depending on the position of the toggle, a conditional panel will appear for either the date range or number of location data filters. Default is to filter by date range. 
+
+**Date range filter (`date_range`):** Select the date range to filter the move2 dataset by. Note that the available date range will automatically update when different individuals are selected. Default is the entire available date range.
+
+**Number of lcoations filter (`number_locations`):** Select the number of locations to filter the move2 dataset by. Note that the maximum number of locations will automatically update when different individuals are selected. Default is the maximum number of locations.
+
+**Remove individual (`delete`):** This button will remove the currently selected individual from the dataset. This feature was provided for data editing purposes where an individual's deployment was ended on Movebank and the user does not want to consider this indvidual for further inspection.
+
+**Open Movebank (`movebank_link`):** This button will open a new webpage tab of the currenly selected individual's deployment page on Movebank. Note that the user must be logged in to Movebank for this page to appear properly, which is recommended before the App is run and data editing commences. 
 
 
 
-
-
-**`Store settings`**: click to store the current settings of the App for future Workflow runs. 
+**Store UI settings (`Store settings`):** Click to store the current settings of the App for future Workflow runs. 
 
 ### Changes in output data
 The input data remains unchanged.
