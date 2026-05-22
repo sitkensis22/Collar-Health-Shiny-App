@@ -91,7 +91,7 @@ shinyModuleUserInterface <- function(id, label) {
                             selected = "All")),
               column(6,
                 tags$style(type = "text/css", "#downloadData{margin-top: 15%}"),     
-                downloadButton(ns("downloadData"), "Download CSV"))),
+                downloadButton(ns("downloadData"), "Download"))),
             uiOutput(ns("ui_data_field_switch")),
             conditionalPanel(
               condition = "input.data_toggle == '1'",
