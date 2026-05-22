@@ -74,35 +74,35 @@
   },
   "language": "eng",
   "keywords": [
-    "example",
-    "template"
+    "alert",
+    "collar",
+    "cluster",
+    "filter",
+    "nsd",
+    "voltage",
+    "gps",
+    "mortality",
+    "resurrection"
   ],
   "people": [
     {
-      "firstName": "Charles",
-      "middleInitials": null,
-      "lastName": "Darwin",
-      "email": "creator@example.com",
+      "firstName": "Daniel",
+      "middleInitials": "R.",
+      "lastName": "Eacker",
+      "email": "daniel.eacker@tauruswildlifeconsulting.com",
       "roles": [
         "author",
+        "compiler",
         "creator"
       ],
-      "orcid": null,
-      "affiliation": null,
-      "affiliationRor": null
+      "orcid": "0000-0003-0194-0726",
+      "affiliation": "Taurus Wildlife Consulting"
     }
   ],
   "funding": [
     {
-      "name": "funder name",
-      "comment": "grant for App"
-    }
-  ],
-  "references": [
-    {
-      "type": "IsDescribedBy",
-      "note": "Darwin, C. 1900. The creation. Journal XY. 1-2",
-      "url": "https://anylink.xyz"
+      "name": "Government of Yukon",
+      "comment": "Grant for to develop Collar Health MoveApps"
     }
   ]
 }
