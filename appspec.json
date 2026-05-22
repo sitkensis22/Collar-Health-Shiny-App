@@ -11,36 +11,58 @@
   "dependencies": {
     "R": [
       {
-        "name": "shiny"
+        "name": "bslib"
+      },
+      {
+        "name": "DT"
+      },
+      {
+        "name": "kableExtra"
+      },
+      {
+        "name": "knitr"
+      },
+      {
+        "name": "leaflet"
+      },
+      {
+        "name": "mapview"
+      },
+      {
+        "name": "move2"
+      },
+      {
+        "name": "plotly"
+      },
+      {
+        "name": "rmarkdown"
       },
       {
         "name": "sf"
       },
       {
-       "remotes": "install_git('https://gitlab.com/bartk/move2.git')"
+        "name": "shiny"
+      },
+      {
+        "name": "shinycssloaders"
+      },
+      {
+        "name": "shinyFiles"
+      },
+      {
+        "name": "shinyjs"
+      },  
+      {
+        "name": "shinyWidgets"
+      },    
+      {
+        "name": "tidyverse"
+      },   
+      {
+        "name": "viridis"
       }
     ]
   },
-
-library("move2")
-library("sf")
-library("bslib")
-library("dplyr")
-library("DT")
-library("kableExtra")
-library("knitr")
-library("leaflet")
-library("mapview") 
-library("plotly")
-library("rmarkdown")
-library("shiny")
-library("shinycssloaders")
-library("shinyFiles")
-library("shinyjs")
-library("shinyWidgets")
-library("tidyverse")
-library("viridis")
-  
   "providedAppFiles": [
     {
       "settingId": "auxiliary-file-a",
