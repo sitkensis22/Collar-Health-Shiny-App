@@ -60,6 +60,9 @@
       },   
       {
         "name": "viridis"
+      },
+      {
+        "name": "webshot"
       }
     ]
   },
