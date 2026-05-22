@@ -3,8 +3,8 @@
   "settings": [
     {
       "id": "auxiliary-file-a",
-      "name": "Collar-Health-Report.RMD",
-      "description": "Rmarkdown file for report download",
+      "name": "Collar-Health-Report",
+      "description": "Rmarkdown file for collar health report download",
       "type": "USER_FILE"
     }
   ],
@@ -21,10 +21,30 @@
       }
     ]
   },
+
+library("move2")
+library("sf")
+library("bslib")
+library("dplyr")
+library("DT")
+library("kableExtra")
+library("knitr")
+library("leaflet")
+library("mapview") 
+library("plotly")
+library("rmarkdown")
+library("shiny")
+library("shinycssloaders")
+library("shinyFiles")
+library("shinyjs")
+library("shinyWidgets")
+library("tidyverse")
+library("viridis")
+  
   "providedAppFiles": [
     {
       "settingId": "auxiliary-file-a",
-      "from": "data/auxiliary/user-files/provided-app-files/auxiliary-file-a/sample.txt"
+      "from": "data/auxiliary/user-files/provided-app-files/auxiliary-file-a/Collar-Health-Report.Rmd"
     }
   ],
   "license": {
