@@ -199,13 +199,13 @@ shinyModule <- function(input, output, session, data) {
   })
   
   # Create the proxy object for info table
-  proxy_info_table <- DT::dataTableProxy(ns("info_table"))
+  proxy_info_table <- DT::dataTableProxy("info_table")
   
   # Update the selected row when the dropdown changes
   observeEvent(input$individual_select, {
     req(rv)
     row_to_select <- which(unique(rv$table[,mt_track_id_column(rv$data)]) == input$individual_select)
-    selectRows(proxy_info_table, row_to_select)
+    DT::selectRows(proxy_info_table, row_to_select)
   })
   
   # update selectInput for notification type depending on individual that is selected
@@ -405,13 +405,13 @@ shinyModule <- function(input, output, session, data) {
   })
   
   # Create the proxy object for all data table
-  proxy_all_table <- DT::dataTableProxy(ns("all_table"))
+  proxy_all_table <- DT::dataTableProxy("all_table")
   
   # Update the selected row when the dropdown changes
   observeEvent(input$individual_select, {
     req(rv)
     row_to_select <- which(unique(rv$table[,mt_track_id_column(rv$data)]) == input$individual_select)
-    selectRows(proxy_all_table, row_to_select)
+    DT::selectRows(proxy_all_table, row_to_select)
   })
 
   # make reactive output for ind table and downloading features
