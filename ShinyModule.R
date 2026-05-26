@@ -324,8 +324,8 @@ shinyModule <- function(input, output, session, data) {
     if(any(available_colnames %in% c("voltage_alias","voltage_value"))){
       available_colnames <- available_colnames[-which(available_colnames %in% c("voltage_alias","voltage_value"))]
     }
-    if(any(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value"))){
-      available_colnames <- available_colnames[-which(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value"))]
+    if(any(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))){
+      available_colnames <- available_colnames[-which(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))]
     }
     # now populate in checkboxGroupInput
     checkboxGroupInput(inputId = ns("data_fields"), label = "Select data fields",
