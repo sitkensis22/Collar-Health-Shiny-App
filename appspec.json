@@ -74,6 +74,7 @@
     "health",
     "leaflet",
     "map",
+    "report",
     "shiny",
     "tag"
   ],
