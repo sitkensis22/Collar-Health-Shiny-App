@@ -195,7 +195,7 @@ shinyModule <- function(input, output, session, data) {
     # Get the value from the data frame (e.g., Species column)
     new_value <- unique(rv$table[,mt_track_id_column(rv$data)])[selected_row]
     # Update the selectInput
-    updateSelectInput(session, inputId = ns("individual_select"), selected = new_value)
+    updateSelectInput(session, inputId = "individual_select", selected = new_value)
   })
   
   # Create the proxy object for info table
@@ -215,7 +215,7 @@ shinyModule <- function(input, output, session, data) {
                                                count > 0) |> dplyr::select(notification_type) |> unique()
     # now update the selectInput
     updateSelectInput(session,
-                      inputId = ns("notification_type"),
+                      inputId = "notification_type",
                       choices = update_choices$notification_type,
                       selected = update_choices$notification_type[1]
     )
@@ -401,7 +401,7 @@ shinyModule <- function(input, output, session, data) {
     # Get the value from the data frame (e.g., Species column)
     new_value <- unique(rv$table[,mt_track_id_column(rv$data)])[selected_row]
     # Update the selectInput
-    updateSelectInput(session, ns("individual_select"), selected = new_value)
+    updateSelectInput(session, "individual_select", selected = new_value)
   })
   
   # Create the proxy object for all data table
