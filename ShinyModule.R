@@ -88,7 +88,7 @@ shinyModuleUserInterface <- function(id, label) {
             # data download features
             fluidRow(
               column(6,
-                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report"),
+                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report"),
                             selected = "All")),
               column(6,
                 div(style = "margin-top: 15%;",     
@@ -144,9 +144,9 @@ shinyModule <- function(input, output, session, data) {
       temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
       rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
     }else
-      if(isFALSE(input$alert_toggle)){
-        rv$table <- get_alertTable(rv$data)
-      }  
+    if(isFALSE(input$alert_toggle)){
+      rv$table <- get_alertTable(rv$data)
+    }  
   }) %>% bindEvent(input$alert_toggle)
   
   # create switch to filter individuals by only those with event alerts
@@ -599,12 +599,8 @@ observeEvent(input$movebank_link, {
   req(data_individual())
   # store study id from track data
   movebank_studyID <- mt_track_data(data_individual()) |> dplyr::select(study_id)
-  # store individual id from track data
-  movebank_individualID <- mt_track_data(data_individual()) |> dplyr::select(individual_id)
-  # get deployment id fromt rack data
-  movebank_deploymentID <- mt_track_data(data_individual()) |> dplyr::select(deployment_id)
   # store movebank link
-  collar_link <- paste0("window.open('","https://www.movebank.org/cms/webapp?gwt_fragment=page=studies,path=study",movebank_studyID$study_id,"+individual",movebank_individualID$individual_id,"+deployment",movebank_deploymentID$deployment_id,"')")
+  collar_link <- paste0("window.open('","https://www.movebank.org/cms/webapp?gwt_fragment=page=studies,path=study",movebank_studyID$study_id,"+deployment","')")
   # now open web page when button is clicked
   shinyjs::runjs(collar_link)
 })
