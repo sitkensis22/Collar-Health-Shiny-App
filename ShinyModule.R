@@ -836,6 +836,11 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
     }
     # end of plots   
   })
+
+ # Create a reactive expression that returns the temp directory
+  temp_path <- reactive({
+    tempdir() # Generates the session-specific temp directory path
+  })
   
   # download data functions
   output$downloadData <- downloadHandler(
@@ -858,10 +863,9 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
       if(input$download_select == "Report"){
-        # save leaflet map as image to temp file
-        temp_dir <- tempdir()
+        # save leaflet map as image to temp directory
         mapshot(user_map(), 
-                file = paste0(temp_dir,"/leaflet.png"))
+                file = paste0(temp_path(),"/leaflet.png"))
         out <- rmarkdown::render(input = getAuxiliaryFilePath("auxiliary-file-a"), output_format = "html_document")
         file.rename(out, file)
       }
