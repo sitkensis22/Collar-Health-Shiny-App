@@ -401,7 +401,7 @@ shinyModule <- function(input, output, session, data) {
     # Get the value from the data frame (e.g., Species column)
     new_value <- unique(rv$table[,mt_track_id_column(rv$data)])[selected_row]
     # Update the selectInput
-    updateSelectInput(session, "individual_select", selected = new_value)
+    updateSelectInput(session, inputId = "individual_select", selected = new_value)
   })
   
   # Create the proxy object for all data table
