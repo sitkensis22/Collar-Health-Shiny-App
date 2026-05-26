@@ -69,15 +69,13 @@
   },
   "language": "eng",
   "keywords": [
-    "alert",
+    "alerts",
     "collar",
-    "cluster",
-    "filter",
-    "nsd",
-    "voltage",
-    "gps",
-    "mortality",
-    "resurrection"
+    "health",
+    "leaflet",
+    "map",
+    "shiny",
+    "tag",
   ],
   "people": [
     {
