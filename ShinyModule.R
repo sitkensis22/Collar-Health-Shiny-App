@@ -6,7 +6,7 @@ library("DT")
 library("kableExtra")
 library("knitr")
 library("leaflet")
-library("mapview") # using mapshot() rathern than mapshot2() function so a a Chrome variant isn't required
+library("mapview") # using mapshot() rather than mapshot2() function so a a Chromium variant isn't required
 library("plotly")
 library("rmarkdown")
 library("shiny")
@@ -155,7 +155,7 @@ shinyModule <- function(input, output, session, data) {
   })
   
   # build data table for DT with ID, tag_local_identifier, and number of notifications
-  output$info_table <- renderDT({
+  output$info_table <- DT::renderDT({
     req(rv)
     # summarize alert table into counts of events over individuals
     summary_table <- rv$table |> group_by(.data[[mt_track_id_column(rv$data)]]) |> summarize(nAlerts = sum(count))
@@ -195,11 +195,11 @@ shinyModule <- function(input, output, session, data) {
     # Get the value from the data frame (e.g., Species column)
     new_value <- unique(rv$table[,mt_track_id_column(rv$data)])[selected_row]
     # Update the selectInput
-    updateSelectInput(session, ns("individual_select"), selected = new_value)
+    updateSelectInput(session, inputId = ns("individual_select"), selected = new_value)
   })
   
   # Create the proxy object for info table
-  proxy_info_table <- dataTableProxy(ns("info_table"))
+  proxy_info_table <- DT::dataTableProxy(ns("info_table"))
   
   # Update the selected row when the dropdown changes
   observeEvent(input$individual_select, {
@@ -381,7 +381,7 @@ shinyModule <- function(input, output, session, data) {
   })
   
   # make datatable for all data (one row for each individual)
-  output$all_table <- renderDT({
+  output$all_table <- DT::renderDT({
     # return data table
     DT::datatable(all_table_data(), extensions = c("FixedHeader"),rownames = FALSE, selection = "single", 
                   options = list(scrollY = "600px", 
@@ -405,7 +405,7 @@ shinyModule <- function(input, output, session, data) {
   })
   
   # Create the proxy object for all data table
-  proxy_all_table <- dataTableProxy(ns("all_table"))
+  proxy_all_table <- DT::dataTableProxy(ns("all_table"))
   
   # Update the selected row when the dropdown changes
   observeEvent(input$individual_select, {
@@ -413,7 +413,6 @@ shinyModule <- function(input, output, session, data) {
     row_to_select <- which(unique(rv$table[,mt_track_id_column(rv$data)]) == input$individual_select)
     selectRows(proxy_all_table, row_to_select)
   })
-  
 
   # make reactive output for ind table and downloading features
   ind_table_data <- reactive({
@@ -442,7 +441,7 @@ shinyModule <- function(input, output, session, data) {
   })
   
   # make datatable for individual data
-    output$ind_table <- renderDT({
+    output$ind_table <- DT::renderDT({
       req(nrow(ind_table_data())>0)
       # render data table
       DT::datatable(ind_table_data(), 
