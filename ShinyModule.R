@@ -868,15 +868,14 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
       if(input$download_select == "Report"){
-        # save leaflet map as image to temp directory (note this requires a Chrome browser
-        mapshot2(user_map(), 
-                file = paste0(temp_path(),"/leaflet.png"))
+        # save leaflet map as interactive HTML (note static image saving not working on MoveApps at the moment)
+        htmlwidgets::saveWidget(user_map(), 
+                file = paste0(temp_path(),"/leaflet.html"))
         out <- rmarkdown::render(input = getAuxiliaryFilePath("auxiliary-file-a"), output_format = "html_document")
         file.rename(out, file)
       }
     }
   )
-
   # end of server
   
   # data must be returned. Either the unmodified input data, or the modified data by the app
