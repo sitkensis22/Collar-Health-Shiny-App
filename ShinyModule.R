@@ -16,8 +16,6 @@ library("shinyjs")
 library("shinyWidgets")
 library("tidyverse")
 library("viridis")
-library("webshot")
-# webshot::install_phantomjs() ## add in docker images in moveapps: R -e 'webshot::install_phantomjs()' 
 
   # helper function 1
   get_alertTable <- function(data){
@@ -863,8 +861,8 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
       if(input$download_select == "Report"){
-        # save leaflet map as image to temp directory
-        mapshot(user_map(), 
+        # save leaflet map as image to temp directory (note this requires a Chrome browser
+        mapshot2(user_map(), 
                 file = paste0(temp_path(),"/leaflet.png"))
         out <- rmarkdown::render(input = getAuxiliaryFilePath("auxiliary-file-a"), output_format = "html_document")
         file.rename(out, file)
