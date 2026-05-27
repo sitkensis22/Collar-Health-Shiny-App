@@ -59,3 +59,6 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 ### Changes in output data
 The input data remains unchanged.
+
+### Most common errors
+Please document and send errors to daniel.eacker@tauruswildlifeconsulting.com.
