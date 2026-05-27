@@ -76,7 +76,7 @@
     "tag"
   ],
   "people": [
-    {
+     {
       "firstName": "Daniel",
       "middleInitials": "R.",
       "lastName": "Eacker",
@@ -88,7 +88,27 @@
       ],
       "orcid": "0000-0003-0194-0726",
       "affiliation": "Taurus Wildlife Consulting"
-    }
+    },
+    {
+      "firstName": "Jasmine",
+      "middleInitials": "",
+      "lastName": "Ware",
+      "email": "Jasmine.Ware@yukon.ca",
+      "roles": [
+        "author",
+        "creator"
+      ]
+    },
+    {
+      "firstName": "Mike",
+      "middleInitials": "",
+      "lastName": "Suitor",
+      "email": "Mike.Suitor@yukon.ca",
+      "roles": [
+        "author",
+        "creator"
+      ]
+    },
   ],
   "funding": [
     {
