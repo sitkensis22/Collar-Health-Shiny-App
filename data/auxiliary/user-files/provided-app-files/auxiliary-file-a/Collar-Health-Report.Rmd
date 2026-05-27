@@ -43,11 +43,11 @@ knitr::include_graphics(paste0(temp_path(),"/leaflet.png"))
 
 ```{r, echo=FALSE}
 kbl_table <- ind_table_data()
-if(nrow(kbl_table) < 15){
+if(nrow(kbl_table) < 14){
   kbl_table <- kbl_table
 }else
-if(nrow(kbl_table) >= 15){
-  kbl_table <- kbl_table[1:15,]
+if(nrow(kbl_table) >= 14){
+  kbl_table <- kbl_table[1:14,]
 }  
 kbl_table |> mutate(across(c(Latitude,Longitude), ~ format(round(., 6), nsmall = 6))) |>
 kbl(format = "html", booktabs = TRUE, row.names = FALSE) |>
