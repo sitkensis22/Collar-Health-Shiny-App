@@ -6,6 +6,9 @@
         "name": "bslib"
       },
       {
+        "name": "chromote"
+      },
+      {
         "name": "DT"
       },
       {
@@ -52,6 +55,9 @@
       },   
       {
         "name": "viridis"
+      },
+      {
+        "name": "webshot2"
       }
     ]
   },
