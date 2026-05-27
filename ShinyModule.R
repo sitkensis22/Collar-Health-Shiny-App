@@ -122,8 +122,7 @@ shinyModuleUserInterface <- function(id, label) {
 shinyModule <- function(input, output, session, data) {
   # all IDs of UI functions need to be wrapped in ns()
   ns <- session$ns
-  #current <- reactiveVal(data) # note this is not needed because data is already saved in reactiveValues
-   
+
   # create dataset and alert table as reactiveValues
   rv <- reactiveValues(data = data, table = get_alertTable(data))
   
@@ -132,7 +131,15 @@ shinyModule <- function(input, output, session, data) {
     req(rv,input$individual_select)
     # Filter data
     rv$data <- rv$data |> filter(.data[[mt_track_id_column(rv$data)]] != input$individual_select)
-    rv$table <- get_alertTable(rv$data)
+    # now account for alert_toggle
+    if(input$alert_toggle){
+      temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
+      temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
+      rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
+    }else
+    if(isFALSE(input$alert_toggle)){
+      rv$table <- get_alertTable(rv$data)
+    }
   }) %>% bindEvent(input$delete)
   
   observe({
