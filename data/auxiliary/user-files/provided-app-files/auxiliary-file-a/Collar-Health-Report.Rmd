@@ -36,7 +36,7 @@ h4.date {
 ### Map
 
 ```{r, echo=FALSE, out.width="80%"}
-knitr::include_graphics(normalizePath(temp_path(),"/leaflet.png"))
+knitr::include_graphics(paste0(temp_path(),"/leaflet.png"))
 ```
 
 ### Location data
