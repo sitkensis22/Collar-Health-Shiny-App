@@ -515,7 +515,7 @@ shinyModule <- function(input, output, session, data) {
   
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
-  req(input$basemap_type,linesColor())
+  req(input$basemap_type,linesColor(),nrow(data_individual())>0)
   if(nrow(data_individual_notification()) > 0){
     map1 <- leaflet() %>% 
             # add scale bar
