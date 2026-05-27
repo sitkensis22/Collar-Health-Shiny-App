@@ -1,6 +1,7 @@
 library("move2")
 library("sf")
 library("bslib")
+library("chromote")       
 library("dplyr")
 library("DT")
 library("kableExtra")
@@ -16,6 +17,7 @@ library("shinyjs")
 library("shinyWidgets")
 library("tidyverse")
 library("viridis")
+library("webshot2")
 
   # helper function 1
   get_alertTable <- function(data){
@@ -34,6 +36,8 @@ library("viridis")
       colnames(temp_alerts)[1] <- mt_track_id_column(data)
       return(temp_alerts)
     }
+
+options(chromote.timeout = 90)
 
 shinyModuleUserInterface <- function(id, label) {
   # all IDs of UI functions need to be wrapped in ns()
