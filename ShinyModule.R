@@ -89,7 +89,7 @@ shinyModuleUserInterface <- function(id, label) {
                 selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report"),
                             selected = "All")),
               column(6,
-                div(style = "margin-top: 15%;",     
+                div(style = "margin-top: 18%;",     
                 downloadButton(ns("downloadData"), "Download")))),
             uiOutput(ns("ui_data_field_switch")),
             conditionalPanel(
