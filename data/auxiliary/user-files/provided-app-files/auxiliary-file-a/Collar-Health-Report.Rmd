@@ -1,10 +1,14 @@
 ---
 title: "Collar-Health-Report"
-subtitle: "`r move2::mt_track_data(rv$data)$name[1]`"
+subtitle: "`r move2::mt_track_data(params$data)$name[1]`"
 output: html_document
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
+  data: NULL
+  table: NULL
   widget_data: NULL
+  individual_select: NULL
+  individual_table: NULL
 ---
 
 <style type="text/css">
@@ -27,16 +31,16 @@ h4.date {
 
 <hr>
 
-### Individual summary: `r input$individual_select`
-<p><span style="font-size: 14px;">Device_ID: </span><span style="font-size: 14px;">`r ind_table_data()[1,"device_id"]`</span></p>
-<p><span style="font-size: 14px;">Min_datetime: </span><span style="font-size: 14px;">`r paste(min(move2::mt_time(filter_track_data(rv$data, .track_id = input$individual_select)),na.rm=TRUE),"UTC")`</span></p>
-<p><span style="font-size: 14px;">Max_datetime: </span><span style="font-size: 14px;">`r paste(max(move2::mt_time(filter_track_data(rv$data, .track_id = input$individual_select)),na.rm=TRUE),"UTC")`</span></p>
-<p><span style="font-size: 14px;">Number_of_locs: </span><span style="font-size: 14px;">`r nrow(filter_track_data(rv$data, .track_id = input$individual_select))`</span></p>
-<p><span style="font-size: 14px;">Number_of_alerts: </span><span style="font-size: 14px;">`r filter_track_data(rv$data, .track_id = input$individual_select)$nAlerts[1]`</span></p>
-<p><span style="font-size: 14px;">Alert_types: </span><span style="font-size: 14px;">`r (rv$table |> filter(.data[[mt_track_id_column(data)]] == input$individual_select & count == 1))[,"notification_type"]`</span></p>
+### Individual summary: `r params$individual_select`
+<p><span style="font-size: 14px;">Device_ID: </span><span style="font-size: 14px;">`r params$individual_table[1,"device_id"]`</span></p>
+<p><span style="font-size: 14px;">Min_datetime: </span><span style="font-size: 14px;">`r paste(min(move2::mt_time(filter_track_data(params$data, .track_id = params$individual_select)),na.rm=TRUE),"UTC")`</span></p>
+<p><span style="font-size: 14px;">Max_datetime: </span><span style="font-size: 14px;">`r paste(max(move2::mt_time(filter_track_data(params$data, .track_id = params$individual_select)),na.rm=TRUE),"UTC")`</span></p>
+<p><span style="font-size: 14px;">Number_of_locs: </span><span style="font-size: 14px;">`r nrow(filter_track_data(params$data, .track_id = params$individual_select))`</span></p>
+<p><span style="font-size: 14px;">Number_of_alerts: </span><span style="font-size: 14px;">`r filter_track_data(params$data, .track_id = params$individual_select)$nAlerts[1]`</span></p>
+<p><span style="font-size: 14px;">Alert_types: </span><span style="font-size: 14px;">`r (params$table |> filter(.data[[mt_track_id_column(params$data)]] == params$individual_select & count == 1))[,"notification_type"]`</span></p>
 
 ### Map
-```{r, echo=FALSE}
+```{r, echo=FALSE,out.width="100%",fig.height=4}
 # Display the widget passed from the Shiny app
 params$widget_data
 ```
@@ -44,7 +48,7 @@ params$widget_data
 ### Location data
 
 ```{r, echo=FALSE}
-kbl_table <- ind_table_data()
+kbl_table <- params$individual_table
 if(nrow(kbl_table) < 14){
   kbl_table <- kbl_table
 }else
@@ -57,4 +61,5 @@ kable_styling("striped", position = "center", font_size = 12)
 ```
 
 <br>
+
 
