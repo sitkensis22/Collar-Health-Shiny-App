@@ -862,9 +862,12 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
       if(input$download_select == "Report"){
-        # Parameters to pass to the Rmd
-        params <- list(widget_data = user_map())
-  
+       # Parameters to pass to the Rmd
+        params <- list(data = rv$data, 
+                       table = rv$table, 
+                       widget_data = user_map(), 
+                       individual_select = input$individual_select,
+                       individual_table = ind_table_data())
         # Knit the document to the specified output file location
         rmarkdown::render(
           input = getAuxiliaryFilePath("auxiliary-file-a"),
