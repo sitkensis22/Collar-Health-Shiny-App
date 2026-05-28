@@ -3,6 +3,8 @@ title: "Collar-Health-Report"
 subtitle: "`r move2::mt_track_data(rv$data)$name[1]`"
 output: html_document
 date: "`r format(Sys.time(), '%d %B, %Y')`"
+params:
+  widget_data: NULL
 ---
 
 <style type="text/css">
@@ -34,8 +36,10 @@ h4.date {
 <p><span style="font-size: 14px;">Alert_types: </span><span style="font-size: 14px;">`r (rv$table |> filter(.data[[mt_track_id_column(data)]] == input$individual_select & count == 1))[,"notification_type"]`</span></p>
 
 ### Map
-
-<iframe src="`r paste0(temp_path(),"/leaflet.html")`" width="100%" height="400px"></iframe>
+```{r, echo=FALSE}
+# Display the widget passed from the Shiny app
+params$widget_data
+```
 
 ### Location data
 
