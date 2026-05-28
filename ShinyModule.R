@@ -840,11 +840,6 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
     }
     # end of plots   
   })
-
- # Create a reactive expression that returns the temp directory
-  temp_path <- reactive({
-    tempdir() # Generates the session-specific temp directory path
-  })
   
   # download data functions
   output$downloadData <- downloadHandler(
