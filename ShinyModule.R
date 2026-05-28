@@ -868,12 +868,17 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
       if(input$download_select == "Report"){
-        # save leaflet map as interactive HTML (note static image saving not working on MoveApps at the moment)
-        htmlwidgets::saveWidget(isolate(user_map()), 
-                file = paste0(temp_path(),"/leaflet.html"),
-                selfcontained = FALSE)
-        out <- rmarkdown::render(input = getAuxiliaryFilePath("auxiliary-file-a"), output_format = "html_document")
-        file.rename(out, file)
+        # Parameters to pass to the Rmd
+        params <- list(widget_data = user_map())
+  
+        # Knit the document to the specified output file location
+        rmarkdown::render(
+          input = getAuxiliaryFilePath("auxiliary-file-a"),
+          output_format = "html_document",
+          output_file = file,
+          params = params,
+          envir = new.env(parent = globalenv())
+        )
       }
     }
   )
