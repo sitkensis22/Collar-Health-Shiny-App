@@ -3,6 +3,7 @@ library("sf")
 library("bslib")     
 library("dplyr")
 library("DT")
+library("htmltools")
 library("kableExtra")
 library("knitr")
 library("leaflet")
@@ -590,6 +591,12 @@ leaf_map <- reactive({
       }
     }else
     if(input$map_all){
+         labels <- paste("</br>ind_id:",mt_track_id(data),
+                "</br>device_id:",mt_track_data(data)$tag_local_identifier,
+                "</br>datetime:",data$timestamp,
+                "</br>lon:",data$lon,
+                "</br>lat:",data$lat,
+                "</br>status:",ifelse(data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
          map1 <- leaflet() %>% 
               # add scale bar
               addScaleBar(position = "bottomleft", 
@@ -602,13 +609,13 @@ leaf_map <- reactive({
                            color = linesColor(),
                            opacity = 0.8) %>%
               # add all data points
-              addCircles(data = rv$data,
+               addCircles(data = data,
                          opacity = 0.3,
-                         label = ~timestamp,
+                         label = labels,
                          fillOpacity = 0.8,
                          radius = 10, 
-                         color = "blue",
-                         fillColor = "blue")
+                         color = ~pal(mt_track_id(data)),
+                         fillColor = ~pal(mt_track_id(data)))
     }  
     return(map1)
 })
