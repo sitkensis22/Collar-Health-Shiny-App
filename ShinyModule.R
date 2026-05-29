@@ -522,9 +522,17 @@ shinyModule <- function(input, output, session, data) {
   
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
-  req(input$basemap_type,linesColor(),nrow(data_individual())>0)
+  req(input$basemap_type,linesColor(),nrow(data_individual())>0,rv$data)
   # base on switch whether or not to show all individuals
   if(isFALSE(input$map_all)){
+              labels <- paste("</br>datetime:",mt_time(data_individual()),
+                        "</br>lon:",st_coordinates(data_individual())[,1],
+                        "</br>lat:",st_coordinates(data_individual())[,2],
+                        "</br>status:",ifelse(data_individual()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
+              labels_alerts <- paste("</br>datetime:",mt_time(data_individual_notification()),
+                        "</br>lon:",st_coordinates(data_individual_notification())[,1],
+                        "</br>lat:",st_coordinates(data_individual_notification())[,2],
+                        "</br>status:",ifelse(data_individual_notification()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
     if(nrow(data_individual_notification()) > 0){
       map1 <- leaflet() %>% 
               # add scale bar
@@ -540,7 +548,7 @@ leaf_map <- reactive({
               # add all data points
               addCircles(data = data_individual(),
                          opacity = 0.3,
-                         label = ~timestamp,
+                         label = labels,
                          fillOpacity = 0.8,
                          radius = 10, 
                          color = "blue",
@@ -548,7 +556,7 @@ leaf_map <- reactive({
               # add locations associated with selected notification
               addCircles(data = data_individual_notification(),
                          opacity = 0.8,
-                         label = ~timestamp,
+                         label = labels_alerts,
                          fillOpacity = 0.8, 
                          radius = 10, 
                          color = "#FF991C", 
@@ -576,7 +584,7 @@ leaf_map <- reactive({
                 # add all data points
                 addCircles(data = data_individual(),
                            opacity = 0.3,
-                           label = ~timestamp,
+                           label = labels,
                            fillOpacity = 0.8,
                            radius = 10, 
                            color = "blue",
@@ -591,12 +599,19 @@ leaf_map <- reactive({
       }
     }else
     if(input$map_all){
-         labels <- paste("</br>ind_id:",mt_track_id(data),
-                "</br>device_id:",mt_track_data(data)$tag_local_identifier,
-                "</br>datetime:",data$timestamp,
-                "</br>lon:",data$lon,
-                "</br>lat:",data$lat,
-                "</br>status:",ifelse(data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
+         temp_data <- rv$data
+         temp_data$lon <- st_coordinates(temp_data)[,1]
+         temp_data$lat <- st_coordinates(temp_data)[,2]
+         pal <- colorFactor(
+          palette = "viridis", # explicitly generate a number of colors
+          domain = mt_track_id(temp_data),
+          na.color = "transparent")
+         labels <- paste("</br>ind_id:",mt_track_id(temp_data),
+                "</br>device_id:",mt_track_data(temp_data)$tag_local_identifier,
+                "</br>datetime:",mt_time(temp_data),
+                "</br>lon:",temp_data$lon,
+                "</br>lat:",temp_data$lat,
+                "</br>status:",ifelse(rtemp_data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
          map1 <- leaflet() %>% 
               # add scale bar
               addScaleBar(position = "bottomleft", 
@@ -609,13 +624,13 @@ leaf_map <- reactive({
                            color = linesColor(),
                            opacity = 0.8) %>%
               # add all data points
-               addCircles(data = data,
+               addCircles(data = temp_data,
                          opacity = 0.3,
                          label = labels,
                          fillOpacity = 0.8,
                          radius = 10, 
-                         color = ~pal(mt_track_id(data)),
-                         fillColor = ~pal(mt_track_id(data)))
+                         color = ~pal(mt_track_id(temp_data)),
+                         fillColor = ~pal(mt_track_id(temp_data)))
     }  
     return(map1)
 })
