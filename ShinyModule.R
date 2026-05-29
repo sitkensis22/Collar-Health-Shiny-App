@@ -50,9 +50,10 @@ shinyModuleUserInterface <- function(id, label) {
       # Begin sidebarLayout
       sidebarLayout(
         sidebarPanel(width = 3,
+            h6("Track information"),
             fluidRow(
               column(6,
-              h6("Track information")),
+              uiOutput(ns("ui_map_all"))),
               column(6,
               uiOutput(ns("ui_data_alert_switch")))
             ),
@@ -156,6 +157,11 @@ shinyModule <- function(input, output, session, data) {
   # create switch to filter individuals by only those with event alerts
   output$ui_data_alert_switch <- renderUI({
     input_switch(id = ns("alert_toggle"), label = "Filter by alerts", value = FALSE)
+  })
+
+  # create switch to filter individuals by only those with event alerts
+  output$ui_map_all <- renderUI({
+    input_switch(id = ns("map_all"), label = "Map all individuals", value = FALSE)
   })
   
   # build data table for DT with ID, tag_local_identifier, and number of notifications
