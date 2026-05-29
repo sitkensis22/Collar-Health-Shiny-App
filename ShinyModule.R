@@ -875,7 +875,36 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         guides(color=guide_legend(title="GPS resurrection status")) 
       ggplotly(gg7, tooltip = c("text")) %>%
         layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))  
-    }
+    }else
+    if(input$notification_type == "tag_release" & unique(data_individual()$nAlerts) > 0){
+      # make time series plot that adjusts based on notification type
+      plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
+      # rename first column to timestamp
+      colnames(plot_data)[1] = "timestamp"
+      # create tag_release as a factor on event indicator variable
+      plot_data$tag_release_status <- character(nrow(plot_data))
+      plot_data$tag_release_status[which(plot_data$tag_release == 1)] <- "Release detected"
+      plot_data$tag_release_status[which(plot_data$tag_release == 0)] <- "No release"
+      # now convert to a factor
+      plot_data$gps_resurrection_status <- as.factor(plot_data$gps_resurrection_status)
+      # reset levels
+      plot_data$gps_resurrection_status <- relevel(plot_data$tag_release_status, ref = "No release")
+      gg8 <- ggplot(plot_data, aes(x = timestamp, y = tag_release, group = tag_release_status,
+                                   color = tag_release_status,
+                                   text = paste("</br>Date:",timestamp,
+                                                "</br>Status:",tag_release_status))) + 
+        geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
+        xlab("Date") + ylab("Tag release indicator") + theme_bw() +
+        theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
+              axis.text.y = element_text(size = 16),
+              axis.title.x = element_text(size = 20),
+              axis.title.y = element_text(size = 20),
+              legend.text = element_text(size = 14),
+              legend.title = element_text(size = 18)) +
+        guides(color=guide_legend(title="Tag release status")) 
+      ggplotly(gg8, tooltip = c("text")) %>%
+        layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))  
+   }
     # end of plots   
   })
   
