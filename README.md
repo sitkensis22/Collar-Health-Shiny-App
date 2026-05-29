@@ -30,7 +30,7 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 ### Settings 
 
-**All map toggle (`map_all`):** This switch switches between showing all individuals on the map and the selected individual. Defaults to selecting data for the selected individual. 
+**All map toggle (`map_all`):** This switch switches between showing all individuals on the map and the selected individual. Defaults to displaying the selected individual. 
 
 **Alert toggle (`alert_toggle`):** This switch filters the individuals in the data based on if they have any alerts or not. Defaults to selecting all data. 
 
