@@ -9,6 +9,9 @@
         "name": "DT"
       },
       {
+        "name": "htmltools"
+      },
+      {
         "name": "kableExtra"
       },
       {
