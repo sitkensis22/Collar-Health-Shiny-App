@@ -19,16 +19,17 @@ library("viridis")
   # helper function 1
   get_alertTable <- function(data){
       # store alert fields
-      alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection")
+      alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
       # subset ids and alert fields
       temp_table <- cbind(id = mt_track_id(data),as.data.frame(data)[,alerts])
       # get unique triggers over each individual
       temp_alerts <- temp_table |> group_by(id) |> summarize(mortality = sum(mortality),cluster = sum(cluster),
                                                   nsd = sum(nsd), voltage = sum(voltage), gps_accuracy = sum(gps_accuracy), 
-                                                  gps_transmission = sum(gps_transmission), gps_resurrection = sum(gps_resurrection))
+                                                  gps_transmission = sum(gps_transmission), gps_resurrection = sum(gps_resurrection),
+                                                  tag_release = sum(tag_release))
       temp_alerts[,alerts] <- ifelse(temp_alerts[,alerts] > 1, 1, 0)
       temp_alerts <- tidyr::gather(temp_alerts, key = "notification_type", "count",mortality, cluster, nsd, voltage, gps_accuracy, 
-                                   gps_transmission, gps_resurrection) |> 
+                                   gps_transmission, gps_resurrection, tag_release) |> 
       as.data.frame()
       colnames(temp_alerts)[1] <- mt_track_id_column(data)
       return(temp_alerts)
@@ -521,47 +522,13 @@ shinyModule <- function(input, output, session, data) {
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
   req(input$basemap_type,linesColor(),nrow(data_individual())>0)
-  if(nrow(data_individual_notification()) > 0){
-    map1 <- leaflet() %>% 
-            # add scale bar
-            addScaleBar(position = "bottomleft", 
-                        options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial= FALSE)) %>%   
-            # add user-selected basemap
-            addProviderTiles(basemap()) %>% 
-            # add track lines for individual
-            addPolylines(data = mt_track_lines(data_individual()),
-                         weight = 2,
-                         color = linesColor(),
-                         opacity = 0.8) %>%
-            # add all data points
-            addCircles(data = data_individual(),
-                       opacity = 0.3,
-                       label = ~timestamp,
-                       fillOpacity = 0.8,
-                       radius = 10, 
-                       color = "blue",
-                       fillColor = "blue") %>%
-            # add locations associated with selected notification
-            addCircles(data = data_individual_notification(),
-                       opacity = 0.8,
-                       label = ~timestamp,
-                       fillOpacity = 0.8, 
-                       radius = 10, 
-                       color = "#FF991C", 
-                       fillColor = "#FF991C")  %>%
-            # add locations to denote start and end of track
-            addCircleMarkers(data = data_individual() |> slice(c(1, n())),
-                             label = c("Start","End"),
-                             fillOpacity = 1,
-                             radius = 10,
-                             color = c("green","red"),
-                             fillColor = c("green","red"))
-  }else
-    if(nrow(data_individual_notification()) == 0){ 
+  # base on switch whether or not to show all individuals
+  if(isFALSE(input$map_all)){
+    if(nrow(data_individual_notification()) > 0){
       map1 <- leaflet() %>% 
               # add scale bar
               addScaleBar(position = "bottomleft", 
-                          options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial = FALSE)) %>%   
+                          options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial= FALSE)) %>%   
               # add user-selected basemap
               addProviderTiles(basemap()) %>% 
               # add track lines for individual
@@ -577,6 +544,14 @@ leaf_map <- reactive({
                          radius = 10, 
                          color = "blue",
                          fillColor = "blue") %>%
+              # add locations associated with selected notification
+              addCircles(data = data_individual_notification(),
+                         opacity = 0.8,
+                         label = ~timestamp,
+                         fillOpacity = 0.8, 
+                         radius = 10, 
+                         color = "#FF991C", 
+                         fillColor = "#FF991C")  %>%
               # add locations to denote start and end of track
               addCircleMarkers(data = data_individual() |> slice(c(1, n())),
                                label = c("Start","End"),
@@ -584,7 +559,57 @@ leaf_map <- reactive({
                                radius = 10,
                                color = c("green","red"),
                                fillColor = c("green","red"))
-    }
+    }else
+      if(nrow(data_individual_notification()) == 0){ 
+        map1 <- leaflet() %>% 
+                # add scale bar
+                addScaleBar(position = "bottomleft", 
+                            options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial = FALSE)) %>%   
+                # add user-selected basemap
+                addProviderTiles(basemap()) %>% 
+                # add track lines for individual
+                addPolylines(data = mt_track_lines(data_individual()),
+                             weight = 2,
+                             color = linesColor(),
+                             opacity = 0.8) %>%
+                # add all data points
+                addCircles(data = data_individual(),
+                           opacity = 0.3,
+                           label = ~timestamp,
+                           fillOpacity = 0.8,
+                           radius = 10, 
+                           color = "blue",
+                           fillColor = "blue") %>%
+                # add locations to denote start and end of track
+                addCircleMarkers(data = data_individual() |> slice(c(1, n())),
+                                 label = c("Start","End"),
+                                 fillOpacity = 1,
+                                 radius = 10,
+                                 color = c("green","red"),
+                                 fillColor = c("green","red"))
+      }
+    }else
+    if(input$map_all){
+         map1 <- leaflet() %>% 
+              # add scale bar
+              addScaleBar(position = "bottomleft", 
+                          options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial= FALSE)) %>%   
+              # add user-selected basemap
+              addProviderTiles(basemap()) %>% 
+              # add track lines for all individuals
+              addPolylines(data = mt_track_lines(rv$data),
+                           weight = 2,
+                           color = linesColor(),
+                           opacity = 0.8) %>%
+              # add all data points
+              addCircles(data = rv$data,
+                         opacity = 0.3,
+                         label = ~timestamp,
+                         fillOpacity = 0.8,
+                         radius = 10, 
+                         color = "blue",
+                         fillColor = "blue")
+    }  
     return(map1)
 })
 
