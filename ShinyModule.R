@@ -55,9 +55,9 @@ shinyModuleUserInterface <- function(id, label) {
             h6("Track information"),
             fluidRow(
               column(6,
-              uiOutput(ns("ui_map_all"))),
+                 uiOutput(ns("ui_data_alert_switch"))),
               column(6,
-              uiOutput(ns("ui_data_alert_switch")))
+                 uiOutput(ns("ui_map_all")))
             ),
           div(style = "margin-bottom: 5%;",
               DTOutput(ns("info_table")), 
@@ -185,7 +185,9 @@ shinyModule <- function(input, output, session, data) {
     # update column names
     colnames(summary_table_merged)[1:2] <- c("ind_id","device_id")
     #    # create data table
-    DT::datatable(as.data.frame(summary_table_merged), rownames = FALSE, selection = "single",
+    DT::datatable(as.data.frame(summary_table_merged), 
+                  rownames = FALSE, 
+                  selection = "single",
                   options = list(scrollY = "150px", 
                                  scrollX = TRUE,  
                                  paging = FALSE,
@@ -302,7 +304,7 @@ shinyModule <- function(input, output, session, data) {
   output$ui_data_field_filter <- renderUI({
     req(data_individual(),input$notification_type,rv$data)
     available_colnames <- colnames(data_individual())[1:(ncol(data_individual())-1)]
-    alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection")
+    alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
     # remove current input$notification from alerts vector
     alerts <- alerts[-which(alerts == input$notification_type)]
     available_colnames <- available_colnames[-which(available_colnames %in% alerts)]
@@ -313,22 +315,22 @@ shinyModule <- function(input, output, session, data) {
       # field indices to reorganize
       field_indices <- which(available_colnames %in% c(mt_track_id_column(rv$data),"device_id",
                                                        mt_time_column(rv$data),input$notification_type,
-                                                       "mortality_status"))
+                                                       "mortality_status","dist_consecutive"))
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                              input$notification_type,"mortality_status","n_locs",available_colnames[-field_indices])
+                              input$notification_type,"mortality_status","dist_consecutive","n_locs",available_colnames[-field_indices])
       # set number of default fields to show
-      n_fields <- 7
+      n_fields <- 8
     }else
     if(isFALSE("mortality_status" %in% available_colnames)){
       # field indices to reorganize
       field_indices <- which(available_colnames %in% c(mt_track_id_column(rv$data),"device_id",
-                                                       mt_time_column(rv$data),input$notification_type))
+                                                       mt_time_column(rv$data),input$notification_type,"dist_consecutive"))
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                              input$notification_type,"n_locs",available_colnames[-field_indices])
+                              input$notification_type,"dist_consecutive","n_locs",available_colnames[-field_indices])
       # set number of default fields to show
-      n_fields <- 6
+      n_fields <- 7
     }  
     # remove notification type if there are none present
     if(sum(as.data.frame(data_individual())[,input$notification_type])==0){
@@ -400,7 +402,10 @@ shinyModule <- function(input, output, session, data) {
   # make datatable for all data (one row for each individual)
   output$all_table <- DT::renderDT({
     # return data table
-    DT::datatable(all_table_data(), extensions = c("FixedHeader"),rownames = FALSE, selection = "single", 
+    DT::datatable(all_table_data(), 
+                 # extensions = c("FixedHeader"),
+                  rownames = FALSE, 
+                  selection = "single", 
                   options = list(scrollY = "600px", 
                                  scrollX = TRUE, 
                                  paging = FALSE,
@@ -462,7 +467,7 @@ shinyModule <- function(input, output, session, data) {
       req(nrow(ind_table_data())>0)
       # render data table
       DT::datatable(ind_table_data(), 
-                    extensions = c("FixedHeader"),
+                    #extensions = c("FixedHeader"),
                     colnames = input$data_fields,
                     rownames = FALSE, 
                     selection = "single", 
@@ -505,34 +510,22 @@ shinyModule <- function(input, output, session, data) {
   
   # determine color of base locations
   linesColor <- reactive({
+    req(input$basemap_type)
     if(input$basemap_type == "World Imagery"){
       return("yellow")
     }else
-      if(input$basemap_type == "World Topo Map"){
-        return("black")
-      }else
-        if(input$basemap_type == "World Street Map"){
-          return("black")
-        }else  
-          if(input$basemap_type == "NatGeo World Map"){
-            return("black")
-          }else
-            if(input$basemap_type == "OpenStreet Map"){
-              return("black")
-            }else
-              if(input$basemap_type == "OpenStreet Topo Map"){
-                return("black")
-              }
+    if(input$basemap_type != "World Imagery"){
+      return("black")
+    }
   })
   
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
-  req(basemap(),linesColor(),nrow(data_individual())>0)
-              labels <- paste("</br>datetime:",mt_time(data_individual()),
+              labels <- paste("datetime:",mt_time(data_individual()),
                         "</br>lon:",st_coordinates(data_individual())[,1],
                         "</br>lat:",st_coordinates(data_individual())[,2],
                         "</br>status:",ifelse(data_individual()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
-              labels_alerts <- paste("</br>datetime:",mt_time(data_individual_notification()),
+              labels_alerts <- paste("datetime:",mt_time(data_individual_notification()),
                         "</br>lon:",st_coordinates(data_individual_notification())[,1],
                         "</br>lat:",st_coordinates(data_individual_notification())[,2],
                         "</br>status:",ifelse(data_individual_notification()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
@@ -555,15 +548,21 @@ leaf_map <- reactive({
                          fillOpacity = 0.8,
                          radius = 10, 
                          color = "blue",
-                         fillColor = "blue") %>%
+                         fillColor = "blue",
+                         labelOptions = labelOptions(
+                           style = list(
+                             "font-size" = "14px"))) %>%
               # add locations associated with selected notification
-              addCircles(data = data_individual_notification(),
+              addCircleMarkers(data = data_individual_notification(),
                          opacity = 0.8,
                          label = labels_alerts,
                          fillOpacity = 0.8, 
                          radius = 10, 
                          color = "#FF991C", 
-                         fillColor = "#FF991C")  %>%
+                         fillColor = "#FF991C",
+                         labelOptions = labelOptions(
+                           style = list(
+                             "font-size" = "14px")))  %>%
               # add locations to denote start and end of track
               addCircleMarkers(data = data_individual() |> slice(c(1, n())),
                                label = c("Start","End"),
@@ -591,7 +590,10 @@ leaf_map <- reactive({
                            fillOpacity = 0.8,
                            radius = 10, 
                            color = "blue",
-                           fillColor = "blue") %>%
+                           fillColor = "blue",
+                           labelOptions = labelOptions(
+                             style = list(
+                               "font-size" = "14px"))) %>%
                 # add locations to denote start and end of track
                 addCircleMarkers(data = data_individual() |> slice(c(1, n())),
                                  label = c("Start","End"),
@@ -610,7 +612,8 @@ output$leafletMap <- renderLeaflet({
       
 # create leaflet map for plotting with choice of basemap
 leaf_map_all <- reactive({
-         req(basemap(),linesColor(),nrow(rv$data) > 0)
+       # req(length(linesColor()) > 0)
+        # req(basemap(),linesColor(),nrow(rv$data) > 0)
          temp_data <- rv$data
          temp_data$lon <- st_coordinates(temp_data)[,1]
          temp_data$lat <- st_coordinates(temp_data)[,2]
@@ -618,7 +621,7 @@ leaf_map_all <- reactive({
           palette = "viridis", # explicitly generate a number of colors
           domain = mt_track_id(temp_data),
           na.color = "transparent")
-         labels <- paste("</br>ind_id:",mt_track_id(temp_data),
+         labels <- paste("ind_id:",mt_track_id(temp_data),
                 "</br>device_id:",mt_track_data(temp_data)$tag_local_identifier,
                 "</br>datetime:",mt_time(temp_data),
                 "</br>lon:",temp_data$lon,
@@ -631,7 +634,7 @@ leaf_map_all <- reactive({
               # add user-selected basemap
               addProviderTiles(basemap()) %>% 
               # add track lines for all individuals
-              addPolylines(data = mt_track_lines(rv$data),
+              addPolylines(data = mt_track_lines(temp_data),
                            weight = 2,
                            color = linesColor(),
                            opacity = 0.8) %>%
@@ -642,13 +645,16 @@ leaf_map_all <- reactive({
                          fillOpacity = 0.8,
                          radius = 10, 
                          color = ~pal(mt_track_id(temp_data)),
-                         fillColor = ~pal(mt_track_id(temp_data))) %>%
+                         fillColor = ~pal(mt_track_id(temp_data)),
+                         labelOptions = labelOptions(
+                           style = list(
+                             "font-size" = "14px"))) %>%
               # add legend
                 addLegend(
                   position = "topright", # Position the legend
                   pal = pal,                # The color palette function
                   values = mt_track_id(temp_data), # The values to use for the legend
-                  title = "ID",      # Legend title
+                  title = "ind_id",      # Legend title
                   opacity = 0.8               # Opacity of the legend colors
                 )
     return(map2)
