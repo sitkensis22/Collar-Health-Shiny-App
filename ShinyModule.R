@@ -28,7 +28,7 @@ library("viridis")
                                                   nsd = sum(nsd), voltage = sum(voltage), gps_accuracy = sum(gps_accuracy), 
                                                   gps_transmission = sum(gps_transmission), gps_resurrection = sum(gps_resurrection),
                                                   tag_release = sum(tag_release))
-      temp_alerts[,alerts] <- ifelse(temp_alerts[,alerts] > 1, 1, 0)
+      temp_alerts[,alerts] <- ifelse(temp_alerts[,alerts] > 0, 1, 0)
       temp_alerts <- tidyr::gather(temp_alerts, key = "notification_type", "count",mortality, cluster, nsd, voltage, gps_accuracy, 
                                    gps_transmission, gps_resurrection, tag_release) |> 
       as.data.frame()
