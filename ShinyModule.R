@@ -610,7 +610,7 @@ output$leafletMap <- renderLeaflet({
       
 # create leaflet map for plotting with choice of basemap
 leaf_map_all <- reactive({
-         req(rv$data)
+         req(nrow(rv$data) > 0)
          temp_data <- rv$data
          temp_data$lon <- st_coordinates(temp_data)[,1]
          temp_data$lat <- st_coordinates(temp_data)[,2]
