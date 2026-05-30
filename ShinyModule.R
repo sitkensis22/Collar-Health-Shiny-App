@@ -103,7 +103,12 @@ shinyModuleUserInterface <- function(id, label) {
           tabsetPanel(
             # tabPanel 1 - Leaflet map
             tabPanel(title = "Map",
-              leafletOutput(ns("leafletMap"),width = "100%", height = "80vh")),
+              conditionalPanel(
+                condition = "input.map_all == '0'", ns = ns,
+                    leafletOutput(ns("leafletMap"),width = "100%", height = "80vh")),
+              conditionalPanel(
+                condition = "input.map_all == '1'", ns = ns,
+                    leafletOutput(ns("leaflet_allMap"),width = "100%", height = "80vh"))), 
             # tabPanel 2 - All data table   
             tabPanel(title = "All data", 
               DTOutput(ns("all_table"))),
@@ -522,9 +527,7 @@ shinyModule <- function(input, output, session, data) {
   
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
-  req(input$basemap_type,linesColor(),nrow(data_individual())>0,rv$data)
-  # base on switch whether or not to show all individuals
-  if(isFALSE(input$map_all)){
+  req(input$basemap_type,linesColor(),nrow(data_individual())>0)
               labels <- paste("</br>datetime:",mt_time(data_individual()),
                         "</br>lon:",st_coordinates(data_individual())[,1],
                         "</br>lat:",st_coordinates(data_individual())[,2],
@@ -597,8 +600,18 @@ leaf_map <- reactive({
                                  color = c("green","red"),
                                  fillColor = c("green","red"))
       }
-    }else
-    if(input$map_all){
+    }
+    return(map1)
+})
+
+# now render leaflet map
+output$leafletMap <- renderLeaflet({
+    leaf_map()
+})
+      
+# create leaflet map for plotting with choice of basemap
+leaf_map_all <- reactive({
+         req(rv$data)
          temp_data <- rv$data
          temp_data$lon <- st_coordinates(temp_data)[,1]
          temp_data$lat <- st_coordinates(temp_data)[,2]
@@ -612,7 +625,7 @@ leaf_map <- reactive({
                 "</br>lon:",temp_data$lon,
                 "</br>lat:",temp_data$lat,
                 "</br>status:",ifelse(temp_data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
-         map1 <- leaflet() %>% 
+         map2 <- leaflet() %>% 
               # add scale bar
               addScaleBar(position = "bottomleft", 
                           options = scaleBarOptions(maxWidth = 200, metric = TRUE, imperial= FALSE)) %>%   
@@ -631,14 +644,12 @@ leaf_map <- reactive({
                          radius = 10, 
                          color = ~pal(mt_track_id(temp_data)),
                          fillColor = ~pal(mt_track_id(temp_data)))
-    }  
-    return(map1)
-})
+    return(map2)
+  })    
 
-  # now render leaflet map
-  output$leafletMap <- renderLeaflet({
-    leaf_map()
-  })
+  output$leaflet_allMap <- renderLeaflet({
+    leaf_map_all()
+  })   
 
 # store user-adjusted leaflet map (zoom, and coordinates)
 user_map <- reactive({
