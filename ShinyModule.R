@@ -611,7 +611,7 @@ leaf_map <- reactive({
                 "</br>datetime:",mt_time(temp_data),
                 "</br>lon:",temp_data$lon,
                 "</br>lat:",temp_data$lat,
-                "</br>status:",ifelse(rtemp_data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
+                "</br>status:",ifelse(temp_data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
          map1 <- leaflet() %>% 
               # add scale bar
               addScaleBar(position = "bottomleft", 
