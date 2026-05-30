@@ -522,11 +522,11 @@ shinyModule <- function(input, output, session, data) {
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
     req(nrow(data_individual()) > 0)
-              labels <- paste("datetime:",paste(mt_time(data_individual()),"UTC"),
+              labels <- paste("timestamp:",paste(mt_time(data_individual()),"UTC"),
                         "</br>lon:",st_coordinates(data_individual())[,1],
                         "</br>lat:",st_coordinates(data_individual())[,2],
                         "</br>status:",ifelse(data_individual()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
-              labels_alerts <- paste("datetime:",paste(mt_time(data_individual_notification()),"UTC"),
+              labels_alerts <- paste("timestamp:",paste(mt_time(data_individual_notification()),"UTC"),
                         "</br>lon:",st_coordinates(data_individual_notification())[,1],
                         "</br>lat:",st_coordinates(data_individual_notification())[,2],
                         "</br>status:",ifelse(data_individual_notification()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
@@ -623,7 +623,7 @@ leaf_map_all <- reactive({
           na.color = "transparent")
          labels <- paste("ind_id:",mt_track_id(temp_data),
                 "</br>device_id:",mt_track_data(temp_data)$tag_local_identifier,
-                "</br>datetime:",paste(mt_time(temp_data),"UTC"),
+                "</br>timestamp:",paste(mt_time(temp_data),"UTC"),
                 "</br>lon:",temp_data$lon,
                 "</br>lat:",temp_data$lat,
                 "</br>status:",ifelse(temp_data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
