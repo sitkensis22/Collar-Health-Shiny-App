@@ -315,10 +315,10 @@ shinyModule <- function(input, output, session, data) {
       # field indices to reorganize
       field_indices <- which(available_colnames %in% c(mt_track_id_column(rv$data),"device_id",
                                                        mt_time_column(rv$data),input$notification_type,
-                                                       "mortality_status","dist_consecutive"))
+                                                       "mortality_status","distMoved"))
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                              input$notification_type,"mortality_status","dist_consecutive","n_locs",available_colnames[-field_indices])
+                              input$notification_type,"mortality_status","distMoved","n_locs",available_colnames[-field_indices])
       # set number of default fields to show
       n_fields <- 8
     }else
