@@ -110,6 +110,17 @@
         "creator"
       ],
       "affiliation": "Government of Yukon"
+    },
+    {
+      "firstName": "Martin",
+      "middleInitials": "",
+      "lastName": "Kienzler",
+      "email": "martin.kienzler@yukon.ca",
+      "roles": [
+        "author",
+        "creator"
+      ],
+      "affiliation": "Government of Yukon"
     }
   ],
   "funding": [
