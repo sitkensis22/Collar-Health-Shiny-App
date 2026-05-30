@@ -554,7 +554,7 @@ leaf_map <- reactive({
                            style = list(
                              "font-size" = "14px"))) %>%
               # add locations associated with selected notification
-              addCircleMarkers(data = data_individual_notification(),
+              addCircles(data = data_individual_notification(),
                          opacity = 0.8,
                          label = labels_alerts,
                          fillOpacity = 0.8, 
