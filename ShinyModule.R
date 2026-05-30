@@ -599,7 +599,6 @@ leaf_map <- reactive({
                                  radius = 10,
                                  color = c("green","red"),
                                  fillColor = c("green","red"))
-      }
     }
     return(map1)
 })
