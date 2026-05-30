@@ -302,7 +302,7 @@ shinyModule <- function(input, output, session, data) {
   
   # make checkBoxGroup for data fields to include in table
   output$ui_data_field_filter <- renderUI({
-    req(data_individual(),input$notification_type,rv$data)
+    req(data_individual(),rv$data,input$individual_select,input$notification_type)
     available_colnames <- colnames(data_individual())[1:(ncol(data_individual())-1)]
     alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
     # remove current input$notification from alerts vector
@@ -319,8 +319,9 @@ shinyModule <- function(input, output, session, data) {
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
                               input$notification_type,"mortality_status","distMoved","n_locs",available_colnames[-field_indices])
-      # set number of default fields to show
-      n_fields <- 8
+      # set fields to show
+      selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
+                             input$notification_type,"mortality_status","distMoved")
     }else
     if(isFALSE("mortality_status" %in% available_colnames)){
       # field indices to reorganize
@@ -329,8 +330,9 @@ shinyModule <- function(input, output, session, data) {
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
                               input$notification_type,"distMoved","n_locs",available_colnames[-field_indices])
-      # set number of default fields to show
-      n_fields <- 7
+      # set fields to show
+      selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
+                             input$notification_type,"distMoved")
     }  
     # remove notification type if there are none present
     if(sum(as.data.frame(data_individual())[,input$notification_type])==0){
@@ -349,7 +351,7 @@ shinyModule <- function(input, output, session, data) {
     # now populate in checkboxGroupInput
     checkboxGroupInput(inputId = ns("data_fields"), label = "Select data fields",
                        choices = available_colnames,
-                       selected = available_colnames[1:n_fields])
+                       selected = selected = selected_colnames)
   })
   
   output$ui_data_field_switch <- renderUI({
@@ -403,7 +405,6 @@ shinyModule <- function(input, output, session, data) {
   output$all_table <- DT::renderDT({
     # return data table
     DT::datatable(all_table_data(), 
-                 # extensions = c("FixedHeader"),
                   rownames = FALSE, 
                   selection = "single", 
                   options = list(scrollY = "600px", 
@@ -438,7 +439,7 @@ shinyModule <- function(input, output, session, data) {
 
   # make reactive output for ind table and downloading features
   ind_table_data <- reactive({
-    req(nrow(data_individual()) > 0,input$data_fields,rv$data,input$individual_select)
+    req(data_individual(),input$data_fields,rv$data,input$individual_select)
     # store lat/longs from move2 object
     Latitude <- st_coordinates(data_individual())[,2]
     Longitude <- st_coordinates(data_individual())[,1]
@@ -464,11 +465,8 @@ shinyModule <- function(input, output, session, data) {
   
   # make datatable for individual data
     output$ind_table <- DT::renderDT({
-      req(nrow(ind_table_data())>0)
       # render data table
       DT::datatable(ind_table_data(), 
-                    #extensions = c("FixedHeader"),
-                    colnames = input$data_fields,
                     rownames = FALSE, 
                     selection = "single", 
                     options = list(scrollY = "600px", 
