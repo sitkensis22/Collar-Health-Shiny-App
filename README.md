@@ -30,9 +30,9 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 ### Settings 
 
-**All map toggle (`map_all`):** This switch switches between showing all individuals on the map and the selected individual. Defaults to displaying the selected individual. 
-
 **Alert toggle (`alert_toggle`):** This switch filters the individuals in the data based on if they have any alerts or not. Defaults to selecting all data. 
+
+**All map toggle (`map_all`):** This switch switches between showing all individuals on the map and the selected individual. Defaults to displaying the selected individual. 
 
 **Select individual (`individual_select`):** Select the individual based on the track id column in the move2 dataset. Note that the individual can also be selected by clicking on "Track information" or "All data" table rows. Defaults to the first id in the move2 dataset.
 
