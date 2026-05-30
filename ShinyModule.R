@@ -521,6 +521,7 @@ shinyModule <- function(input, output, session, data) {
   
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
+    req(nrow(data_individual()) > 0)
               labels <- paste("datetime:",mt_time(data_individual()),
                         "</br>lon:",st_coordinates(data_individual())[,1],
                         "</br>lat:",st_coordinates(data_individual())[,2],
@@ -612,8 +613,7 @@ output$leafletMap <- renderLeaflet({
       
 # create leaflet map for plotting with choice of basemap
 leaf_map_all <- reactive({
-       # req(length(linesColor()) > 0)
-        # req(basemap(),linesColor(),nrow(rv$data) > 0)
+        req(nrow(rv$data) > 0)
          temp_data <- rv$data
          temp_data$lon <- st_coordinates(temp_data)[,1]
          temp_data$lat <- st_coordinates(temp_data)[,2]
