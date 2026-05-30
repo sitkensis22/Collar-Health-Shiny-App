@@ -465,6 +465,7 @@ shinyModule <- function(input, output, session, data) {
   
   # make datatable for individual data
     output$ind_table <- DT::renderDT({
+      req(ind_table_data())
       # render data table
       DT::datatable(ind_table_data(), 
                     rownames = FALSE, 
