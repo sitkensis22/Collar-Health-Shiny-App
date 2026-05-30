@@ -321,7 +321,7 @@ shinyModule <- function(input, output, session, data) {
                               input$notification_type,"mortality_status","distMoved","n_locs",available_colnames[-field_indices])
       # set fields to show
       selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                             input$notification_type,"mortality_status","distMoved")
+                             "mortality_status","distMoved")
     }else
     if(isFALSE("mortality_status" %in% available_colnames)){
       # field indices to reorganize
@@ -332,7 +332,7 @@ shinyModule <- function(input, output, session, data) {
                               input$notification_type,"distMoved","n_locs",available_colnames[-field_indices])
       # set fields to show
       selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                             input$notification_type,"distMoved")
+                             "distMoved")
     }  
     # remove notification type if there are none present
     if(sum(as.data.frame(data_individual())[,input$notification_type])==0){
@@ -465,7 +465,6 @@ shinyModule <- function(input, output, session, data) {
   
   # make datatable for individual data
     output$ind_table <- DT::renderDT({
-      req(ind_table_data())
       # render data table
       DT::datatable(ind_table_data(), 
                     rownames = FALSE, 
