@@ -351,7 +351,7 @@ shinyModule <- function(input, output, session, data) {
     # now populate in checkboxGroupInput
     checkboxGroupInput(inputId = ns("data_fields"), label = "Select data fields",
                        choices = available_colnames,
-                       selected = selected = selected_colnames)
+                       selected = selected_colnames)
   })
   
   output$ui_data_field_switch <- renderUI({
