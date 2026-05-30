@@ -642,7 +642,15 @@ leaf_map_all <- reactive({
                          fillOpacity = 0.8,
                          radius = 10, 
                          color = ~pal(mt_track_id(temp_data)),
-                         fillColor = ~pal(mt_track_id(temp_data)))
+                         fillColor = ~pal(mt_track_id(temp_data))) %>%
+              # add legend
+                addLegend(
+                  position = "topright", # Position the legend
+                  pal = pal,                # The color palette function
+                  values = mt_track_id(temp_data), # The values to use for the legend
+                  title = "ID",      # Legend title
+                  opacity = 0.8               # Opacity of the legend colors
+                )
     return(map2)
   })    
 
