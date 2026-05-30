@@ -318,7 +318,7 @@ shinyModule <- function(input, output, session, data) {
                                                        "mortality_status","distMoved"))
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                              input$notification_type,"mortality_status","distMoved","n_locs",available_colnames[-field_indices])
+                              "mortality_status","distMoved",input$notification_type,"n_locs",available_colnames[-field_indices])
       # set fields to show
       selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
                              "mortality_status","distMoved")
@@ -329,7 +329,7 @@ shinyModule <- function(input, output, session, data) {
                                                        mt_time_column(rv$data),input$notification_type,"distMoved"))
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                              input$notification_type,"distMoved","n_locs",available_colnames[-field_indices])
+                              "distMoved",input$notification_type,"n_locs",available_colnames[-field_indices])
       # set fields to show
       selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
                              "distMoved")
