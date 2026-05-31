@@ -300,10 +300,10 @@ shinyModule <- function(input, output, session, data) {
                 selected = unique(rv$table$notification_type)[1])
   })
   
-  # make checkBoxGroup for data fields to include in table
-  output$ui_data_field_filter <- renderUI({
-    req(data_individual(),rv$data,input$individual_select,input$notification_type)
-    available_colnames <- colnames(data_individual())[1:(ncol(data_individual())-1)]
+  # make field names a reactive value
+  field_columns <- reactive({
+    req(input$notification_type,rv$data)
+    available_colnames <- colnames(rv$data)[1:(ncol(rv$data)-1)]
     alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
     # remove current input$notification from alerts vector
     alerts <- alerts[-which(alerts == input$notification_type)]
@@ -335,7 +335,7 @@ shinyModule <- function(input, output, session, data) {
                              input$notification_type,"distMoved")
     }  
     # remove notification type if there are none present
-    if(sum(as.data.frame(data_individual())[,input$notification_type])==0){
+    if(sum(as.data.frame(rv$data)[,input$notification_type])==0){
       available_colnames <- available_colnames[-which(available_colnames == input$notification_type)]
     }
     # remove alias and value field
@@ -348,14 +348,20 @@ shinyModule <- function(input, output, session, data) {
     if(any(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))){
       available_colnames <- available_colnames[-which(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))]
     }
-    # now populate in checkboxGroupInput
-    checkboxGroupInput(inputId = ns("data_fields"), label = "Select data fields",
-                       choices = available_colnames,
-                       selected = selected_colnames)
+    return(list(selected_colnames = selected_colnames, available_colnames = available_colnames))
   })
-  
+        
+        
+    # make checkBoxGroup for data fields to include in table
+    output$ui_data_field_filter <- renderUI({
+      # populate in checkboxGroupInput with reactive field_columns
+      checkboxGroupInput(inputId = ns("data_fields"), label = "Select data fields",
+                         choices = field_columns()$available_colnames,
+                         selected = field_columns()$selected_colnames)
+   })
+
   output$ui_data_field_switch <- renderUI({
-    input_switch(id = ns("data_toggle"), label = "Show data fields", value = TRUE)
+    input_switch(id = ns("data_toggle"), label = "Show data fields", value = FALSE)
   })
   
   # make reactive data for all_table output and downloading features
@@ -439,7 +445,7 @@ shinyModule <- function(input, output, session, data) {
 
   # make reactive output for ind table and downloading features
   ind_table_data <- reactive({
-    req(data_individual(),input$data_fields,rv$data,input$individual_select)
+    req(data_individual(),rv$data,input$individual_select)
     # store lat/longs from move2 object
     Latitude <- st_coordinates(data_individual())[,2]
     Longitude <- st_coordinates(data_individual())[,1]
@@ -460,7 +466,7 @@ shinyModule <- function(input, output, session, data) {
     # format timestamp as character
     ind_data[,mt_time_column(data_individual())] <- as.character(paste(ind_data[,mt_time_column(data_individual())],"UTC"))
     # filter by input data fields
-    return(ind_data[,input$data_fields])
+    return(ind_data[,field_columns()$selected_colnames])
   })
   
   # make datatable for individual data
@@ -476,7 +482,7 @@ shinyModule <- function(input, output, session, data) {
                                    info = FALSE,
                                    fixedHeader=TRUE)) %>%
         formatRound(columns = c('Latitude', 'Longitude'), digits = 6)
-    }, server = FALSE) 
+    }, server = TRUE) # tried server = FALSE but input$notification_type wasn't updating
   
   # select basemap type
   output$ui_basemap_type  <- renderUI({
@@ -703,8 +709,10 @@ if(unique(data_individual()$nAlerts) == 0){
   plot_data$mortality_status[which(plot_data$mortality == 0)] <- "Nothing detected"
   # now convert to a factor
   plot_data$mortality_status <- as.factor(plot_data$mortality_status)
-  # reset levels
-  plot_data$mortality_status <- relevel(plot_data$mortality_status, ref = "Nothing detected")
+  # reset levels depending on if any indicators are zero
+  if(any(plot_data$mortality == 0)){
+    plot_data$mortality_status <- relevel(plot_data$mortality_status, ref = "Nothing detected")
+  }
   gg1 <- ggplot(plot_data, aes(x = timestamp, y = mortality, group = mortality_status,
                            color = mortality_status,
                            text = paste("</br>Date:",timestamp,
@@ -732,8 +740,10 @@ if(input$notification_type == "cluster"& unique(data_individual()$nAlerts) > 0){
   plot_data$cluster_status[which(plot_data$cluster == 0)] <- "Not in cluster"
   # now convert to a factor
   plot_data$cluster_status <- as.factor(plot_data$cluster_status)
-  # reset levels
-  plot_data$cluster_status <- relevel(plot_data$cluster_status, ref = "Not in cluster")
+  # reset levels depending on if any indicators are zero
+  if(any(plot_data$cluster == 0)){
+    plot_data$cluster_status <- relevel(plot_data$cluster_status, ref = "Not in cluster")
+  }
   gg2 <- ggplot(plot_data, aes(x = timestamp, y = cluster, group = cluster_status,
                              color = cluster_status,
                              text = paste("</br>Date:",timestamp,
@@ -761,8 +771,10 @@ if(input$notification_type == "nsd"& unique(data_individual()$nAlerts) > 0){
     plot_data$nsd_status[which(plot_data$nsd == 0)] <- "Not above max NSD"
     # now convert to a factor
     plot_data$nsd_status <- as.factor(plot_data$nsd_status)
-    # reset levels
-    plot_data$nsd_status <- relevel(plot_data$nsd_status, ref = "Not above max NSD")
+    # reset levels depending on if any indicators are zero
+    if(any(plot_data$nsd == 0)){
+      plot_data$nsd_status <- relevel(plot_data$nsd_status, ref = "Not above max NSD")
+    }
     gg3 <- ggplot(plot_data, aes(x = timestamp, y = nsd, group = nsd_status,
                                  color = nsd_status,
                                  text = paste("</br>Date:",timestamp,
@@ -791,8 +803,10 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
     plot_data$voltage_status[which(plot_data$voltage == 0)] <- "Above threshold"
     # now convert to a factor
     plot_data$voltage_status <- as.factor(plot_data$voltage_status)
-    # reset levels
-    plot_data$voltage_status <- relevel(plot_data$voltage_status, ref = "Above threshold")
+    # reset levels depending on if any indicators are zero
+    if(any(plot_data$voltage == 0)){
+      plot_data$voltage_status <- relevel(plot_data$voltage_status, ref = "Above threshold")
+    }
     # remove NA values that are present
     if(any(is.na(plot_data[,data_individual()$voltage_alias[1]]))){
     plot_data <- plot_data |> filter(is.na(.data[[data_individual()$voltage_alias[1]]]) == FALSE)
@@ -836,8 +850,10 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
     plot_data$gps_accuracy_status[which(plot_data$gps_accuracy == 0)] <- "3D GPS Fix"
     # now convert to a factor
     plot_data$gps_accuracy_status <- as.factor(plot_data$gps_accuracy_status)
-    # reset levels
-    plot_data$gps_accuracy_status <- relevel(plot_data$gps_accuracy_status, ref = "2D GPS Fix or failed")
+    # reset levels depending on if any indicators are zero
+    if(any(plot_data$gps_accuracy == 0)){
+      plot_data$gps_accuracy_status <- relevel(plot_data$gps_accuracy_status, ref = "2D GPS Fix or failed")
+    }
     gg5 <- ggplot(plot_data, aes(x = timestamp, y = gps_accuracy, group = gps_accuracy_status,
                                  color = gps_accuracy_status,
                                  text = paste("</br>Date:",timestamp,
@@ -866,8 +882,10 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       plot_data$gps_transmission_status[which(plot_data$gps_transmission == 0)] <- "Normal transmission"
       # now convert to a factor
       plot_data$gps_transmission_status <- as.factor(plot_data$gps_transmission_status)
-      # reset levels
-      plot_data$gps_transmission_status <- relevel(plot_data$gps_transmission_status, ref = "Normal transmission")
+      # reset levels depending on if any indicators are zero
+      if(any(plot_data$gps_transmission == 0)){
+        plot_data$gps_transmission_status <- relevel(plot_data$gps_transmission_status, ref = "Normal transmission")
+      }
       gg6 <- ggplot(plot_data, aes(x = timestamp, y = gps_transmission, group = gps_transmission_status,
                                    color = gps_transmission_status,
                                    text = paste("</br>Date:",timestamp,
@@ -895,8 +913,10 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       plot_data$gps_resurrection_status[which(plot_data$gps_resurrection == 0)] <- "Normal transmission"
       # now convert to a factor
       plot_data$gps_resurrection_status <- as.factor(plot_data$gps_resurrection_status)
-      # reset levels
-      plot_data$gps_resurrection_status <- relevel(plot_data$gps_resurrection_status, ref = "Normal transmission")
+      # reset levels depending on if any indicators are zero
+      if(any(plot_data$gps_resurrection == 0)){
+        plot_data$gps_resurrection_status <- relevel(plot_data$gps_resurrection_status, ref = "Normal transmission")
+      }
       gg7 <- ggplot(plot_data, aes(x = timestamp, y = gps_resurrection, group = gps_resurrection_status,
                                    color = gps_resurrection_status,
                                    text = paste("</br>Date:",timestamp,
@@ -923,9 +943,11 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       plot_data$tag_release_status[which(plot_data$tag_release == 1)] <- "Release detected"
       plot_data$tag_release_status[which(plot_data$tag_release == 0)] <- "No release"
       # now convert to a factor
-      plot_data$gps_resurrection_status <- as.factor(plot_data$gps_resurrection_status)
-      # reset levels
-      plot_data$gps_resurrection_status <- relevel(plot_data$tag_release_status, ref = "No release")
+      plot_data$tag_release_status <- as.factor(plot_data$tag_release_status)
+      # reset levels depending on if any indicators are zero
+      if(any(plot_data$tag_release == 0)){
+        plot_data$tag_release_status <- relevel(plot_data$tag_release_status, ref = "No release")
+      }
       gg8 <- ggplot(plot_data, aes(x = timestamp, y = tag_release, group = tag_release_status,
                                    color = tag_release_status,
                                    text = paste("</br>Date:",timestamp,
