@@ -302,7 +302,7 @@ shinyModule <- function(input, output, session, data) {
   
   # make field names a reactive value
   field_columns <- reactive({
-    req(input$notification_type,rv$data)
+    req(data_individual(),input$notification_type,rv$data)
     available_colnames <- colnames(rv$data)[1:(ncol(rv$data)-1)]
     alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
     # remove current input$notification from alerts vector
@@ -335,8 +335,9 @@ shinyModule <- function(input, output, session, data) {
                              input$notification_type,"distMoved")
     }  
     # remove notification type if there are none present
-    if(sum(as.data.frame(rv$data)[,input$notification_type])==0){
+    if(sum(as.data.frame(data_individual())[,input$notification_type])==0){
       available_colnames <- available_colnames[-which(available_colnames == input$notification_type)]
+      selected_colnames <- selected_colnames[-which(selected_colnames == input$notification_type)]
     }
     # remove alias and value field
     if(any(available_colnames %in% c("mortality_alias","mortality_value"))){
