@@ -476,7 +476,7 @@ shinyModule <- function(input, output, session, data) {
                                    info = FALSE,
                                    fixedHeader=TRUE)) %>%
         formatRound(columns = c('Latitude', 'Longitude'), digits = 6)
-    }, server = TRUE) 
+    }, server = FALSE) 
   
   # select basemap type
   output$ui_basemap_type  <- renderUI({
