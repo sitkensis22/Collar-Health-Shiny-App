@@ -318,10 +318,10 @@ shinyModule <- function(input, output, session, data) {
                                                        "mortality_status","distMoved"))
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                              "mortality_status","distMoved",input$notification_type,"n_locs",available_colnames[-field_indices])
+                              input$notification_type,"mortality_status","distMoved","n_locs",available_colnames[-field_indices])
       # set fields to show
       selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                             "mortality_status","distMoved")
+                             input$notification_type,"mortality_status","distMoved")
     }else
     if(isFALSE("mortality_status" %in% available_colnames)){
       # field indices to reorganize
@@ -329,10 +329,10 @@ shinyModule <- function(input, output, session, data) {
                                                        mt_time_column(rv$data),input$notification_type,"distMoved"))
       # reorganize data fields
       available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                              "distMoved",input$notification_type,"n_locs",available_colnames[-field_indices])
+                             input$notification_type,"distMoved","n_locs",available_colnames[-field_indices])
       # set fields to show
       selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                             "distMoved")
+                             input$notification_type,"distMoved")
     }  
     # remove notification type if there are none present
     if(sum(as.data.frame(data_individual())[,input$notification_type])==0){
