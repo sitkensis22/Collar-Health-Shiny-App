@@ -17,6 +17,7 @@ library("shinyWidgets")
 library("tidyverse")
 library("viridis")
 
+
   # helper function 1
   get_alertTable <- function(data){
       # store alert fields
@@ -30,9 +31,19 @@ library("viridis")
                                                   tag_release = sum(tag_release))
       temp_alerts[,alerts] <- ifelse(temp_alerts[,alerts] > 0, 1, 0)
       temp_alerts <- tidyr::gather(temp_alerts, key = "notification_type", "count",mortality, cluster, nsd, voltage, gps_accuracy, 
-                                   gps_transmission, gps_resurrection, tag_release) |> 
-      as.data.frame()
+                                   gps_transmission, gps_resurrection, tag_release) |> as.data.frame()
       colnames(temp_alerts)[1] <- mt_track_id_column(data)
+      # get ids,status
+      tag_status <- mt_track_data(data) |> dplyr::select(mt_track_id_column(data),"deployment_end_type")
+      # set deployment_end_type to "status"
+      colnames(tag_status)[2] = c("status")
+      # add level to summary_table_merged$status
+      tag_status$status <- factor(tag_status$status, levels = c(levels(tag_status$status), "active"))
+      # set NA to status to active
+      tag_status$status[which(is.na(tag_status$status))]  <- "active"
+      # merge in deployment_end_type
+      temp_alerts <- merge(temp_alerts, tag_status, by = mt_track_id_column(data))
+      # return temp_alerts
       return(temp_alerts)
     }
 
@@ -57,11 +68,12 @@ shinyModuleUserInterface <- function(id, label) {
               column(6,
                  uiOutput(ns("ui_data_alert_switch"))),
               column(6,
-                 uiOutput(ns("ui_map_all")))
+                 uiOutput(ns("ui_data_status_switch")))     
             ),
           div(style = "margin-bottom: 5%;",
               DTOutput(ns("info_table")), 
           ),
+            uiOutput(ns("ui_map_all")),
             uiOutput(ns("ui_select_individual")),
             uiOutput(ns("ui_notification_type")),
             uiOutput(ns("ui_basemap_type")),
@@ -138,32 +150,58 @@ shinyModule <- function(input, output, session, data) {
     req(rv,input$individual_select)
     # Filter data
     rv$data <- rv$data |> filter(.data[[mt_track_id_column(rv$data)]] != input$individual_select)
-    # now account for alert_toggle
-    if(input$alert_toggle){
+    # now account for alert_toggle and status toggle
+    if(isTRUE(input$alert_toggle) & isTRUE(input$status_toggle)){
+      temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
+      temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
+      rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
+      rv$table <- rv$table |> slice(which(status == "active"))
+    }else  
+    if(isTRUE(input$alert_toggle) & isFALSE(input$status_toggle)){
       temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
       temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
       rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
     }else
-    if(isFALSE(input$alert_toggle)){
+    if(isFALSE(input$alert_toggle) & isTRUE(input$status_toggle)){
+      rv$table <- get_alertTable(rv$data)
+      rv$table <- rv$table |> slice(which(status == "active"))
+    }else
+    if(isFALSE(input$alert_toggle) & isFALSE(input$status_toggle)){
       rv$table <- get_alertTable(rv$data)
     }
   }) %>% bindEvent(input$delete)
   
   observe({
     req(rv)
-    if(input$alert_toggle){
+    # now account for alert_toggle and status toggle
+    if(isTRUE(input$alert_toggle) & isTRUE(input$status_toggle)){
       temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
       temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
       rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
-    }else
-    if(isFALSE(input$alert_toggle)){
-      rv$table <- get_alertTable(rv$data)
-    }  
-  }) %>% bindEvent(input$alert_toggle)
+      rv$table <- rv$table |> slice(which(status == "active"))
+    }else  
+      if(isTRUE(input$alert_toggle) & isFALSE(input$status_toggle)){
+        temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
+        temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
+        rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
+      }else
+        if(isFALSE(input$alert_toggle) & isTRUE(input$status_toggle)){
+          rv$table <- get_alertTable(rv$data)
+          rv$table <- rv$table |> slice(which(status == "active"))
+        }else
+          if(isFALSE(input$alert_toggle) & isFALSE(input$status_toggle)){
+            rv$table <- get_alertTable(rv$data)
+          }
+  }) %>% bindEvent(input$alert_toggle,input$status_toggle)
   
   # create switch to filter individuals by only those with event alerts
   output$ui_data_alert_switch <- renderUI({
     input_switch(id = ns("alert_toggle"), label = "Filter by alerts", value = FALSE)
+  })
+  
+  # create switch to filter individuals by only those with event alerts
+  output$ui_data_status_switch <- renderUI({
+    input_switch(id = ns("status_toggle"), label = "Filter by status", value = FALSE)
   })
 
   # create switch to filter individuals by only those with event alerts
@@ -176,12 +214,14 @@ shinyModule <- function(input, output, session, data) {
     req(rv)
     # summarize alert table into counts of events over individuals
     summary_table <- rv$table |> group_by(.data[[mt_track_id_column(rv$data)]]) |> summarize(nAlerts = sum(count))
-    # get ids and tag ids   into tibble
+    # now add in status
+    summary_table <- merge(summary_table, unique(rv$table[,c(mt_track_id_column(rv$data),"status")]), by = mt_track_id_column(rv$data))
+    # get ids, tag_ids and stauts into tibble
     tag_info <- mt_track_data(rv$data) |> dplyr::select(mt_track_id_column(rv$data),"tag_local_identifier")
     # merge tag_local_identifier in with summary_table
     summary_table_merged <- merge(summary_table, tag_info, by = mt_track_id_column(rv$data))
     # reorganize table
-    summary_table_merged <- summary_table_merged[,c(1,3,2)]
+    summary_table_merged <- summary_table_merged[,c(1,4,3,2)]
     # update column names
     colnames(summary_table_merged)[1:2] <- c("ind_id","device_id")
     #    # create data table
@@ -275,14 +315,8 @@ shinyModule <- function(input, output, session, data) {
       if(input$filter_toggle == "Number of locations"){
         filtered_data2 <- filtered_data |> slice_tail(n=input$number_locations)
       }
+    # return data
     return(filtered_data2)
-  }) 
-  
-  # data filter for notification and individual
-  data_individual_notification <- reactive({
-    req(data_individual(),input$notification_type)
-    filtered_data_notification <- data_individual() |> filter(.data[[input$notification_type]] == 1)
-    return(filtered_data_notification)
   }) 
   
   # select individual
@@ -527,16 +561,20 @@ shinyModule <- function(input, output, session, data) {
   
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
-    req(nrow(data_individual()) > 0)
-              labels <- paste("timestamp:",paste(mt_time(data_individual()),"UTC"),
-                        "</br>lon:",st_coordinates(data_individual())[,1],
-                        "</br>lat:",st_coordinates(data_individual())[,2],
-                        "</br>status:",ifelse(data_individual()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
-              labels_alerts <- paste("timestamp:",paste(mt_time(data_individual_notification()),"UTC"),
-                        "</br>lon:",st_coordinates(data_individual_notification())[,1],
-                        "</br>lat:",st_coordinates(data_individual_notification())[,2],
-                        "</br>status:",ifelse(data_individual_notification()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
-    if(nrow(data_individual_notification()) > 0){
+    req(nrow(data_individual()) > 0,input$notification_type)
+    # store labels
+    labels <- paste("timestamp:",paste(mt_time(data_individual()),"UTC"),
+              "</br>lon:",st_coordinates(data_individual())[,1],
+              "</br>lat:",st_coordinates(data_individual())[,2],
+              "</br>status:",ifelse(data_individual()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
+    start_end_labels <- paste(paste(c("START","END")),
+                          "</br>timestamp:",paste(mt_time(data_individual()[c(1,nrow(data_individual())),]),"UTC"),
+                          "</br>lon:",st_coordinates(data_individual())[c(1,nrow(data_individual())),1],
+                          "</br>lat:",st_coordinates(data_individual())[c(1,nrow(data_individual())),2],
+                          "</br>status:",ifelse(data_individual()$mortality[c(1,nrow(data_individual()))]==1,"dead","alive")) %>% lapply(htmltools::HTML)
+    # map data that has alertsa
+    if(nrow(data_individual() |> filter(.data[[input$notification_type]] == 1)) > 0){
+      # now plot leatlet map
       map1 <- leaflet() %>% 
               # add scale bar
               addScaleBar(position = "bottomleft", 
@@ -551,34 +589,37 @@ leaf_map <- reactive({
               # add all data points
               addCircles(data = data_individual(),
                          opacity = 0.3,
-                         label = labels,
                          fillOpacity = 0.8,
+                         popup = labels,
                          radius = 10, 
                          color = "blue",
                          fillColor = "blue",
-                         labelOptions = labelOptions(
+                         popupOptions = popupOptions(
                            style = list(
                              "font-size" = "14px"))) %>%
-              # add locations associated with selected notification
-              addCircles(data = data_individual_notification(),
-                         opacity = 0.8,
-                         label = labels_alerts,
-                         fillOpacity = 0.8, 
+              # add alert data points
+              addCircles(data = data_individual() |> filter(.data[[input$notification_type]] == 1),
+                         opacity = 0.3,
+                         fillOpacity = 0.8,
+                         popup = labels[which(as.data.frame(data_individual())[,input$notification_type]==1)],
                          radius = 10, 
-                         color = "#FF991C", 
+                         color = "#FF991C",
                          fillColor = "#FF991C",
-                         labelOptions = labelOptions(
+                         popupOptions = popupOptions(
                            style = list(
-                             "font-size" = "14px")))  %>%
+                             "font-size" = "14px"))) %>%
               # add locations to denote start and end of track
               addCircleMarkers(data = data_individual() |> slice(c(1, n())),
-                               label = c("Start","End"),
+                               popup = start_end_labels,
                                fillOpacity = 1,
                                radius = 10,
                                color = c("green","red"),
-                               fillColor = c("green","red"))
+                               fillColor = c("green","red"),
+                               popupOptions = popupOptions(
+                                 style = list(
+                                   "font-size" = "14px")))
     }else
-      if(nrow(data_individual_notification()) == 0){ 
+      if(nrow(data_individual() |> filter(.data[[input$notification_type]] == 1)) == 0){ 
         map1 <- leaflet() %>% 
                 # add scale bar
                 addScaleBar(position = "bottomleft", 
@@ -593,21 +634,24 @@ leaf_map <- reactive({
                 # add all data points
                 addCircles(data = data_individual(),
                            opacity = 0.3,
-                           label = labels,
+                           popup = labels,
                            fillOpacity = 0.8,
                            radius = 10, 
                            color = "blue",
                            fillColor = "blue",
-                           labelOptions = labelOptions(
+                           popupOptions = popupOptions(
                              style = list(
                                "font-size" = "14px"))) %>%
                 # add locations to denote start and end of track
                 addCircleMarkers(data = data_individual() |> slice(c(1, n())),
-                                 label = c("Start","End"),
+                                 popup = start_end_labels,
                                  fillOpacity = 1,
                                  radius = 10,
                                  color = c("green","red"),
-                                 fillColor = c("green","red"))
+                                 fillColor = c("green","red"),
+                                 popupOptions = popupOptions(
+                                   style = list(
+                                     "font-size" = "14px")))
     }
     return(map1)
 })
@@ -616,6 +660,7 @@ leaf_map <- reactive({
 output$leafletMap <- renderLeaflet({
     leaf_map()
 })
+
       
 # create leaflet map for plotting with choice of basemap
 leaf_map_all <- reactive({
