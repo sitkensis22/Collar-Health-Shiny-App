@@ -599,8 +599,8 @@ leaf_map <- reactive({
                              "font-size" = "14px"))) %>%
               # add alert data points
               addCircles(data = data_individual() |> filter(.data[[input$notification_type]] == 1),
-                         opacity = 0.3,
-                         fillOpacity = 0.8,
+                         opacity = 1,
+                         fillOpacity = 1,
                          popup = labels[which(as.data.frame(data_individual())[,input$notification_type]==1)],
                          radius = 10, 
                          color = "#FF991C",
