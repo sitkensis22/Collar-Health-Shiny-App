@@ -108,8 +108,7 @@ shinyModuleUserInterface <- function(id, label) {
             uiOutput(ns("ui_data_field_switch")),
             conditionalPanel(
               condition = "input.data_toggle == '1'", ns = ns,
-              uiOutput(ns("ui_data_field_filter"))
-            )
+              uiOutput(ns("ui_data_field_filter")))
         ),
         mainPanel(width = 9,
           tabsetPanel(
@@ -315,6 +314,19 @@ shinyModule <- function(input, output, session, data) {
         if(input$filter_toggle == "Number of locations"){
           filtered_data2 <- filtered_data |> slice_tail(n=input$number_locations)
         }
+      # add unique id to data for clicking on Leaflet map
+      filtered_data2$unique_id <- 1:nrow(filtered_data2)
+      # add label for Leaflet map
+      # store labels
+      filtered_data2$label <- paste("<div style='font-size: 14px;'>",
+                                    "timestamp:",paste(mt_time(filtered_data2),"UTC"),
+                                    "</br>lon:",st_coordinates(filtered_data2)[,1],
+                                    "</br>lat:",st_coordinates(filtered_data2)[,2],
+                                    "</br>status:",ifelse(filtered_data2$mortality==1,"dead","alive"),
+                                    "</div>") %>% lapply(htmltools::HTML)
+      # add lat/lon for leaflet popups
+      filtered_data2$lng <- st_coordinates(filtered_data2)[,1]
+      filtered_data2$lat <- st_coordinates(filtered_data2)[,2]
       # return data
       return(filtered_data2)
     }) 
@@ -589,16 +601,6 @@ shinyModule <- function(input, output, session, data) {
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
     req(nrow(data_individual()) > 0,input$notification_type)
-    # store labels
-    labels <- paste("timestamp:",paste(mt_time(data_individual()),"UTC"),
-              "</br>lon:",st_coordinates(data_individual())[,1],
-              "</br>lat:",st_coordinates(data_individual())[,2],
-              "</br>status:",ifelse(data_individual()$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
-    start_end_labels <- paste(paste(c("START","END")),
-                          "</br>timestamp:",paste(mt_time(data_individual()[c(1,nrow(data_individual())),]),"UTC"),
-                          "</br>lon:",st_coordinates(data_individual())[c(1,nrow(data_individual())),1],
-                          "</br>lat:",st_coordinates(data_individual())[c(1,nrow(data_individual())),2],
-                          "</br>status:",ifelse(data_individual()$mortality[c(1,nrow(data_individual()))]==1,"dead","alive")) %>% lapply(htmltools::HTML)
     # map data that has alertsa
     if(nrow(data_individual() |> filter(.data[[input$notification_type]] == 1)) > 0){
       # now plot leatlet map
@@ -613,38 +615,43 @@ leaf_map <- reactive({
                            weight = 2,
                            color = linesColor(),
                            opacity = 0.8) %>%
-              # add all data points
-              addCircles(data = data_individual(),
-                         opacity = 0.3,
-                         fillOpacity = 0.8,
-                         popup = labels,
-                         radius = 10, 
-                         color = "blue",
-                         fillColor = "blue",
-                         popupOptions = popupOptions(
-                           style = list(
-                             "font-size" = "14px"))) %>%
-              # add alert data points
-              addCircles(data = data_individual() |> filter(.data[[input$notification_type]] == 1),
-                         opacity = 1,
-                         fillOpacity = 1,
-                         popup = labels[which(as.data.frame(data_individual())[,input$notification_type]==1)],
-                         radius = 10, 
-                         color = "#FF991C",
-                         fillColor = "#FF991C",
-                         popupOptions = popupOptions(
-                           style = list(
-                             "font-size" = "14px"))) %>%
               # add locations to denote start and end of track
               addCircleMarkers(data = data_individual() |> slice(c(1, n())),
-                               popup = start_end_labels,
+                               layerId = ~unique_id,
+                               label = ~label,
+                               opacity = 1,
                                fillOpacity = 1,
                                radius = 10,
                                color = c("green","red"),
-                               fillColor = c("green","red"),
-                               popupOptions = popupOptions(
-                                 style = list(
-                                   "font-size" = "14px")))
+                               fillColor = c("green","red")) %>%
+              # add all data points
+              addCircles(data = data_individual(),
+                         layerId = ~unique_id,
+                         opacity = 0.3,
+                         fillOpacity = 0.8,
+                         #popup = labels,
+                         label = ~label,
+                         radius = 10, 
+                         color = "blue",
+                         fillColor = "blue") %>%
+              # add alert data points
+              addCircles(data = data_individual() |> filter(.data[[input$notification_type]] == 1),
+                         layerId = ~unique_id,
+                         opacity = 1,
+                         fillOpacity = 1,
+                         label = ~label,
+                         radius = 10, 
+                         color = "#FF991C",
+                         fillColor = "#FF991C") %>%
+              # add locations to denote start and end of track
+              addCircles(data = data_individual() |> slice(c(1, n())),
+                               label = ~label,
+                               layerId = ~unique_id,
+                               opacity = 0.6,
+                               fillOpacity = 0.6,
+                               radius = 10,
+                               color = c("green","red"),
+                               fillColor = c("green","red"))
     }else
       if(nrow(data_individual() |> filter(.data[[input$notification_type]] == 1)) == 0){ 
         map1 <- leaflet() %>% 
@@ -658,29 +665,84 @@ leaf_map <- reactive({
                              weight = 2,
                              color = linesColor(),
                              opacity = 0.8) %>%
+                # add locations to denote start and end of track
+                addCircleMarkers(data = data_individual() |> slice(c(1, n())),
+                           layerId = ~unique_id,
+                           label = ~label,
+                           opacity = 1,
+                           fillOpacity = 1,
+                           radius = 10,
+                           color = c("green","red"),
+                           fillColor = c("green","red")) %>%
                 # add all data points
                 addCircles(data = data_individual(),
+                           layerId = ~unique_id,
                            opacity = 0.3,
-                           popup = labels,
+                           label = ~label,
+                           #popup = labels,
                            fillOpacity = 0.8,
                            radius = 10, 
                            color = "blue",
-                           fillColor = "blue",
-                           popupOptions = popupOptions(
-                             style = list(
-                               "font-size" = "14px"))) %>%
+                           fillColor = "blue") %>%
                 # add locations to denote start and end of track
-                addCircleMarkers(data = data_individual() |> slice(c(1, n())),
-                                 popup = start_end_labels,
-                                 fillOpacity = 1,
-                                 radius = 10,
+                addCircles(data = data_individual() |> slice(c(1, n())),
+                                 layerId = ~unique_id,
+                                 label = ~label,
+                                 opacity = 0.6,
+                                 fillOpacity = 0.6,
+                                 radius = 40,
                                  color = c("green","red"),
-                                 fillColor = c("green","red"),
-                                 popupOptions = popupOptions(
-                                   style = list(
-                                     "font-size" = "14px")))
+                                 fillColor = c("green","red"))
     }
     return(map1)
+})
+
+# Reactive value to store the clicked circle ID
+selected_circle <- reactiveVal(NULL)
+
+# 1. Handle Clicks: Pin or Unpin a label when a circle is clicked
+observeEvent(input$leafletMap_shape_click, {
+  clicked_id <- input$leafletMap_shape_click$id
+  
+  # If the user clicks the same circle again, un-pin it
+  if(!is.null(selected_circle()) && selected_circle() == clicked_id){
+    selected_circle(NULL)
+    leafletProxy("leafletMap") %>% clearPopups()
+  }else 
+  if(isFALSE(!is.null(selected_circle()) && selected_circle() == clicked_id)){
+    # Pin the newly clicked circle
+    selected_circle(clicked_id)
+    clicked_point <- subset(data_individual(), unique_id == clicked_id)
+    
+    leafletProxy("leafletMap") %>%
+      clearPopups() %>%
+      addPopups(
+        lat = clicked_point$lat, 
+        lng = clicked_point$lng, 
+        popup = clicked_point$label,
+        options = popupOptions(closeOnClick = FALSE, 
+                               autoClose = FALSE,
+                               closeButton = TRUE))
+  }
+})
+
+# 2. Handle Hovers safely (Guards against NA/missing values)
+observeEvent(input$leafletMap_shape_mouseover, {
+  hover_id <- input$leafletMap_shape_mouseover$id
+  
+  # Safety Check 1: If mouse is not over a valid shape ID, exit early
+  if(is.null(hover_id) || is.na(hover_id)) return() 
+  
+  current_selected <- selected_circle()
+  
+  # Safety Check 2: If a circle is currently pinned, evaluate safely using isTRUE()
+  if(!is.null(current_selected)) {
+    # isTRUE handles NA values safely if current_selected or hover_id are corrupted
+    if(isTRUE(current_selected != hover_id)){
+      selected_circle(NULL) # Reset state
+      leafletProxy("leafletMap") %>% clearPopups()
+    }
+  }
 })
 
 # now render leaflet map
