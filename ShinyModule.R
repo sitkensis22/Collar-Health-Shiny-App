@@ -139,254 +139,281 @@ shinyModuleUserInterface <- function(id, label) {
 
 # The parameter "data" is reserved for the data object passed on from the previous app
 shinyModule <- function(input, output, session, data) {
-  # all IDs of UI functions need to be wrapped in ns()
-  ns <- session$ns
-
-  # create dataset and alert table as reactiveValues
-  rv <- reactiveValues(data = data, table = get_alertTable(data))
+    # all IDs of UI functions need to be wrapped in ns()
+    ns <- session$ns
   
-  # observe button click
-  observe({
-    req(rv,input$individual_select)
-    # Filter data
-    rv$data <- rv$data |> filter(.data[[mt_track_id_column(rv$data)]] != input$individual_select)
-    # now account for alert_toggle and status toggle
-    if(isTRUE(input$alert_toggle) & isTRUE(input$status_toggle)){
-      temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
-      temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
-      rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
-      rv$table <- rv$table |> slice(which(status == "active"))
-    }else  
-    if(isTRUE(input$alert_toggle) & isFALSE(input$status_toggle)){
-      temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
-      temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
-      rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
-    }else
-    if(isFALSE(input$alert_toggle) & isTRUE(input$status_toggle)){
-      rv$table <- get_alertTable(rv$data)
-      rv$table <- rv$table |> slice(which(status == "active"))
-    }else
-    if(isFALSE(input$alert_toggle) & isFALSE(input$status_toggle)){
-      rv$table <- get_alertTable(rv$data)
-    }
-  }) %>% bindEvent(input$delete)
-  
-  observe({
-    req(rv)
-    # now account for alert_toggle and status toggle
-    if(isTRUE(input$alert_toggle) & isTRUE(input$status_toggle)){
-      temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
-      temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
-      rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
-      rv$table <- rv$table |> slice(which(status == "active"))
-    }else  
+    # create dataset and alert table as reactiveValues
+    rv <- reactiveValues(data = data, table = get_alertTable(data))
+    
+    # observe button click
+    observe({
+      req(rv,input$individual_select)
+      # Filter data
+      rv$data <- rv$data |> filter(.data[[mt_track_id_column(rv$data)]] != input$individual_select)
+      # now account for alert_toggle and status toggle
+      if(isTRUE(input$alert_toggle) & isTRUE(input$status_toggle)){
+        temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
+        temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
+        rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
+        rv$table <- rv$table |> slice(which(status == "active"))
+      }else  
       if(isTRUE(input$alert_toggle) & isFALSE(input$status_toggle)){
         temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
         temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
         rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
       }else
-        if(isFALSE(input$alert_toggle) & isTRUE(input$status_toggle)){
-          rv$table <- get_alertTable(rv$data)
-          rv$table <- rv$table |> slice(which(status == "active"))
-        }else
-          if(isFALSE(input$alert_toggle) & isFALSE(input$status_toggle)){
-            rv$table <- get_alertTable(rv$data)
-          }
-  }) %>% bindEvent(input$alert_toggle,input$status_toggle)
-  
-  # create switch to filter individuals by only those with event alerts
-  output$ui_data_alert_switch <- renderUI({
-    input_switch(id = ns("alert_toggle"), label = "Filter by alerts", value = FALSE)
-  })
-  
-  # create switch to filter individuals by only those with event alerts
-  output$ui_data_status_switch <- renderUI({
-    input_switch(id = ns("status_toggle"), label = "Filter by status", value = FALSE)
-  })
-
-  # create switch to filter individuals by only those with event alerts
-  output$ui_map_all <- renderUI({
-    input_switch(id = ns("map_all"), label = "Map all individuals", value = FALSE)
-  })
-  
-  # build data table for DT with ID, tag_local_identifier, and number of notifications
-  output$info_table <- DT::renderDT({
-    req(rv)
-    # summarize alert table into counts of events over individuals
-    summary_table <- rv$table |> group_by(.data[[mt_track_id_column(rv$data)]]) |> summarize(nAlerts = sum(count))
-    # now add in status
-    summary_table <- merge(summary_table, unique(rv$table[,c(mt_track_id_column(rv$data),"status")]), by = mt_track_id_column(rv$data))
-    # get ids, tag_ids and stauts into tibble
-    tag_info <- mt_track_data(rv$data) |> dplyr::select(mt_track_id_column(rv$data),"tag_local_identifier")
-    # merge tag_local_identifier in with summary_table
-    summary_table_merged <- merge(summary_table, tag_info, by = mt_track_id_column(rv$data))
-    # reorganize table
-    summary_table_merged <- summary_table_merged[,c(1,4,3,2)]
-    # update column names
-    colnames(summary_table_merged)[1:2] <- c("ind_id","device_id")
-    #    # create data table
-    DT::datatable(as.data.frame(summary_table_merged), 
-                  rownames = FALSE, 
-                  selection = "single",
-                  options = list(scrollY = "150px", 
-                                 scrollX = TRUE,  
-                                 paging = FALSE,
-                                 lengthChange = FALSE,
-                                 searching = FALSE,
-                                 info = FALSE,
-                                 pageLength = 5,
-                                 columnDefs = list(
-                                   list(className = 'dt-left', targets = "_all"))))
-  }) 
-  
-  # select individual
-  output$ui_select_individual <- renderUI({
-    req(rv$table)
-    selectInput(ns("individual_select"), label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
-                selected = rv$table[1,mt_track_id_column(rv$data)])
-  })
-  
-  # Observe clicks/selections in the info table
-  observeEvent(input$info_table_rows_selected, {
-    req(rv)
-    # Get the row index
-    selected_row <- input$info_table_rows_selected
-    # Get the value from the data frame (e.g., Species column)
-    new_value <- unique(rv$table[,mt_track_id_column(rv$data)])[selected_row]
-    # Update the selectInput
-    updateSelectInput(session, inputId = "individual_select", selected = new_value)
-  })
-  
-  # Create the proxy object for info table
-  proxy_info_table <- DT::dataTableProxy("info_table")
-  
-  # Update the selected row when the dropdown changes
-  observeEvent(input$individual_select, {
-    req(rv)
-    row_to_select <- which(unique(rv$table[,mt_track_id_column(rv$data)]) == input$individual_select)
-    DT::selectRows(proxy_info_table, row_to_select)
-  })
-  
-  # update selectInput for notification type depending on individual that is selected
-  observeEvent(input$individual_select, {
-    req(rv)
-    update_choices = rv$table |> filter(rv$table[,mt_track_id_column(rv$data)] == input$individual_select &
-                                               count > 0) |> dplyr::select(notification_type) |> unique()
-    # now update the selectInput
-    updateSelectInput(session,
-                      inputId = "notification_type",
-                      choices = update_choices$notification_type,
-                      selected = update_choices$notification_type[1]
-    )
-  }) 
-
-  # radioButton for filter type
-  output$ui_data_filter <- renderUI({
-    radioButtons(inputId = ns("filter_toggle"), label = "Select filter",
-                 choices = c("Date","Number of locations"), selected = "Date", inline = TRUE)
-  })
-  
-  # filter based on data range
-    output$ui_data_range  <- renderUI({
-      min_date = suppressWarnings(min(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
-      max_date = suppressWarnings(max(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
-      req(as.character(min_date) != "Inf" && as.character(max_date) != "Inf")
-      dateRangeInput(inputId = ns("date_range"), label = "Select date range", 
-                     start = min_date, end = max_date,
-                     min = min_date, max = max_date)
-    })
-
-  # filter based on number of locations
-  output$ui_nlocations <- renderUI({
-    max_rows <- nrow(filter_track_data(rv$data, .track_id = input$individual_select))
-    req(max_rows >= 1)
-    sliderInput(inputId = ns("number_locations"), label = "Select number of locations", 
-                min = 1, max = max_rows, value = max_rows, step = 1)
-  }) 
-  
-  # data filter for overall individual
-  data_individual <- reactive({
-    req(rv$data,input$date_range,input$number_locations,input$individual_select)
-    filtered_data <- filter_track_data(rv$data, .track_id = input$individual_select)
-    if(input$filter_toggle == "Date"){
-      filtered_data2 <- filtered_data |> filter(between(as.Date(mt_time(filtered_data)), 
-                                                        as.Date(input$date_range[1]),as.Date(input$date_range[2])))
-    }else
-      if(input$filter_toggle == "Number of locations"){
-        filtered_data2 <- filtered_data |> slice_tail(n=input$number_locations)
+      if(isFALSE(input$alert_toggle) & isTRUE(input$status_toggle)){
+        rv$table <- get_alertTable(rv$data)
+        rv$table <- rv$table |> slice(which(status == "active"))
+      }else
+      if(isFALSE(input$alert_toggle) & isFALSE(input$status_toggle)){
+        rv$table <- get_alertTable(rv$data)
       }
-    # return data
-    return(filtered_data2)
-  }) 
+    }) %>% bindEvent(input$delete)
+    
+    observe({
+      req(rv)
+      # now account for alert_toggle and status toggle
+      if(isTRUE(input$alert_toggle) & isTRUE(input$status_toggle)){
+        temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
+        temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
+        rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
+        rv$table <- rv$table |> slice(which(status == "active"))
+      }else  
+        if(isTRUE(input$alert_toggle) & isFALSE(input$status_toggle)){
+          temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
+          temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
+          rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
+        }else
+          if(isFALSE(input$alert_toggle) & isTRUE(input$status_toggle)){
+            rv$table <- get_alertTable(rv$data)
+            rv$table <- rv$table |> slice(which(status == "active"))
+          }else
+            if(isFALSE(input$alert_toggle) & isFALSE(input$status_toggle)){
+              rv$table <- get_alertTable(rv$data)
+            }
+    }) %>% bindEvent(input$alert_toggle,input$status_toggle)
+    
+    # create switch to filter individuals by only those with event alerts
+    output$ui_data_alert_switch <- renderUI({
+      input_switch(id = ns("alert_toggle"), label = "Filter by alerts", value = FALSE)
+    })
+    
+    # create switch to filter individuals by only those with event alerts
+    output$ui_data_status_switch <- renderUI({
+      input_switch(id = ns("status_toggle"), label = "Filter by status", value = FALSE)
+    })
   
-  # select individual
-  output$ui_select_individual <- renderUI({
-    req(rv)
-    selectInput(ns("individual_select"), label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
-                selected = rv$table[1,mt_track_id_column(rv$data)])
-  })
+    # create switch to filter individuals by only those with event alerts
+    output$ui_map_all <- renderUI({
+      input_switch(id = ns("map_all"), label = "Map all individuals", value = FALSE)
+    })
+    
+    # build data table for DT with ID, tag_local_identifier, and number of notifications
+    output$info_table <- DT::renderDT({
+      req(rv)
+      # summarize alert table into counts of events over individuals
+      summary_table <- rv$table |> group_by(.data[[mt_track_id_column(rv$data)]]) |> summarize(nAlerts = sum(count))
+      # now add in status
+      summary_table <- merge(summary_table, unique(rv$table[,c(mt_track_id_column(rv$data),"status")]), by = mt_track_id_column(rv$data))
+      # get ids, tag_ids and stauts into tibble
+      tag_info <- mt_track_data(rv$data) |> dplyr::select(mt_track_id_column(rv$data),"tag_local_identifier")
+      # merge tag_local_identifier in with summary_table
+      summary_table_merged <- merge(summary_table, tag_info, by = mt_track_id_column(rv$data))
+      # reorganize table
+      summary_table_merged <- summary_table_merged[,c(1,4,3,2)]
+      # update column names
+      colnames(summary_table_merged)[1:2] <- c("ind_id","device_id")
+      #    # create data table
+      DT::datatable(as.data.frame(summary_table_merged), 
+                    rownames = FALSE, 
+                    selection = "single",
+                    options = list(scrollY = "150px", 
+                                   scrollX = TRUE,  
+                                   paging = FALSE,
+                                   lengthChange = FALSE,
+                                   searching = FALSE,
+                                   info = FALSE,
+                                   pageLength = 5,
+                                   columnDefs = list(
+                                     list(className = 'dt-left', targets = "_all"))))
+    }) 
+    
+    # select individual
+    output$ui_select_individual <- renderUI({
+      req(rv$table)
+      selectInput(ns("individual_select"), label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
+                  selected = rv$table[1,mt_track_id_column(rv$data)])
+    })
+    
+    # Observe clicks/selections in the info table
+    observeEvent(input$info_table_rows_selected, {
+      req(rv)
+      # Get the row index
+      selected_row <- input$info_table_rows_selected
+      # Get the value from the data frame (e.g., Species column)
+      new_value <- unique(rv$table[,mt_track_id_column(rv$data)])[selected_row]
+      # Update the selectInput
+      updateSelectInput(session, inputId = "individual_select", selected = new_value)
+    })
+    
+    # Create the proxy object for info table
+    proxy_info_table <- DT::dataTableProxy("info_table")
+    
+    # Update the selected row when the dropdown changes
+    observeEvent(input$individual_select, {
+      req(rv)
+      row_to_select <- which(unique(rv$table[,mt_track_id_column(rv$data)]) == input$individual_select)
+      DT::selectRows(proxy_info_table, row_to_select)
+    })
+    
+    # update selectInput for notification type depending on individual that is selected
+    observeEvent(input$individual_select, {
+      req(rv)
+      update_choices = rv$table |> filter(rv$table[,mt_track_id_column(rv$data)] == input$individual_select &
+                                                 count > 0) |> dplyr::select(notification_type) |> unique()
+      # now update the selectInput
+      updateSelectInput(session,
+                        inputId = "notification_type",
+                        choices = update_choices$notification_type,
+                        selected = update_choices$notification_type[1]
+      )
+    }) 
   
-  # select notification type
-  output$ui_notification_type  <- renderUI({
-    req(rv$table)
-    selectInput(ns("notification_type"), label = "Select alert", 
-                choices = unique(rv$table$notification_type),
-                selected = unique(rv$table$notification_type)[1])
-  })
+    # radioButton for filter type
+    output$ui_data_filter <- renderUI({
+      radioButtons(inputId = ns("filter_toggle"), label = "Select filter",
+                   choices = c("Date","Number of locations"), selected = "Date", inline = TRUE)
+    })
+    
+    # filter based on data range
+      output$ui_data_range  <- renderUI({
+        min_date = suppressWarnings(min(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
+        max_date = suppressWarnings(max(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
+        req(as.character(min_date) != "Inf" && as.character(max_date) != "Inf")
+        dateRangeInput(inputId = ns("date_range"), label = "Select date range", 
+                       start = min_date, end = max_date,
+                       min = min_date, max = max_date)
+      })
   
-  # make field names a reactive value
-  field_columns <- reactive({
-    req(data_individual(),input$notification_type,rv$data)
-    available_colnames <- colnames(rv$data)[1:(ncol(rv$data)-1)]
-    alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
-    # remove current input$notification from alerts vector
-    alerts <- alerts[-which(alerts == input$notification_type)]
-    available_colnames <- available_colnames[-which(available_colnames %in% alerts)]
-    # add tag_local_identifier to available_colnames
-    available_colnames <- c(available_colnames,"device_id")
-    # include mortality_status in default selected fields if it is present in the data
-    if("mortality_status" %in% available_colnames){
-      # field indices to reorganize
-      field_indices <- which(available_colnames %in% c(mt_track_id_column(rv$data),"device_id",
-                                                       mt_time_column(rv$data),input$notification_type,
-                                                       "mortality_status","distMoved"))
-      # reorganize data fields
-      available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                              input$notification_type,"mortality_status","distMoved","n_locs",available_colnames[-field_indices])
-      # set fields to show
-      selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                             input$notification_type,"mortality_status","distMoved")
-    }else
-    if(isFALSE("mortality_status" %in% available_colnames)){
-      # field indices to reorganize
-      field_indices <- which(available_colnames %in% c(mt_track_id_column(rv$data),"device_id",
-                                                       mt_time_column(rv$data),input$notification_type,"distMoved"))
-      # reorganize data fields
-      available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                             input$notification_type,"distMoved","n_locs",available_colnames[-field_indices])
-      # set fields to show
-      selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
-                             input$notification_type,"distMoved")
-    }  
-    # remove notification type if there are none present
-    if(sum(as.data.frame(data_individual())[,input$notification_type])==0){
-      available_colnames <- available_colnames[-which(available_colnames == input$notification_type)]
-      selected_colnames <- selected_colnames[-which(selected_colnames == input$notification_type)]
-    }
-    # remove alias and value field
-    if(any(available_colnames %in% c("mortality_alias","mortality_value"))){
-      available_colnames <- available_colnames[-which(available_colnames %in% c("mortality_alias","mortality_value"))]
-    }
-    if(any(available_colnames %in% c("voltage_alias","voltage_value"))){
-      available_colnames <- available_colnames[-which(available_colnames %in% c("voltage_alias","voltage_value"))]
-    }
-    if(any(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))){
-      available_colnames <- available_colnames[-which(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))]
-    }
-    return(list(selected_colnames = selected_colnames, available_colnames = available_colnames))
-  })
+    # filter based on number of locations
+    output$ui_nlocations <- renderUI({
+      max_rows <- nrow(filter_track_data(rv$data, .track_id = input$individual_select))
+      req(max_rows >= 1)
+      sliderInput(inputId = ns("number_locations"), label = "Select number of locations", 
+                  min = 1, max = max_rows, value = max_rows, step = 1)
+    }) 
+    
+    # data filter for overall individual
+    data_individual <- reactive({
+      req(rv$data,input$date_range,input$number_locations,input$individual_select)
+      filtered_data <- filter_track_data(rv$data, .track_id = input$individual_select)
+      if(input$filter_toggle == "Date"){
+        filtered_data2 <- filtered_data |> filter(between(as.Date(mt_time(filtered_data)), 
+                                                          as.Date(input$date_range[1]),as.Date(input$date_range[2])))
+      }else
+        if(input$filter_toggle == "Number of locations"){
+          filtered_data2 <- filtered_data |> slice_tail(n=input$number_locations)
+        }
+      # return data
+      return(filtered_data2)
+    }) 
+    
+    # select individual
+    output$ui_select_individual <- renderUI({
+      req(rv)
+      selectInput(ns("individual_select"), label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
+                  selected = rv$table[1,mt_track_id_column(rv$data)])
+    })
+    
+    # select notification type
+    output$ui_notification_type  <- renderUI({
+      req(rv$table)
+      selectInput(ns("notification_type"), label = "Select alert", 
+                  choices = unique(rv$table$notification_type),
+                  selected = unique(rv$table$notification_type)[1])
+    })
+  
+    # make field names a reactive value
+    field_columns <- reactive({
+      req(data_individual(),input$notification_type,rv$data)
+      available_colnames <- colnames(rv$data)[1:(ncol(rv$data)-1)]
+      alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
+      # remove current input$notification from alerts vector
+      alerts <- alerts[-which(alerts == input$notification_type)]
+      available_colnames <- available_colnames[-which(available_colnames %in% alerts)]
+      # add tag_local_identifier to available_colnames
+      available_colnames <- c(available_colnames,"device_id")
+      # include mortality_status in default selected fields if it is present in the data
+      if("mortality_status" %in% available_colnames){
+        # field indices to reorganize
+        field_indices <- which(available_colnames %in% c(mt_track_id_column(rv$data),"device_id",
+                                                         mt_time_column(rv$data),input$notification_type,
+                                                         "mortality_status","distMoved"))
+        # reorganize data fields
+        available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
+                                input$notification_type,"mortality_status","distMoved","n_locs",available_colnames[-field_indices])
+        # set fields to show
+        selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
+                               input$notification_type,"mortality_status","distMoved")
+      }else
+      if(isFALSE("mortality_status" %in% available_colnames)){
+        # field indices to reorganize
+        field_indices <- which(available_colnames %in% c(mt_track_id_column(rv$data),"device_id",
+                                                         mt_time_column(rv$data),input$notification_type,"distMoved"))
+        # reorganize data fields
+        available_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
+                               input$notification_type,"distMoved","n_locs",available_colnames[-field_indices])
+        # set fields to show
+        selected_colnames <- c(mt_track_id_column(rv$data),"device_id","Latitude","Longitude",mt_time_column(rv$data),
+                               input$notification_type,"distMoved")
+      }  
+      # remove notification type if there are none present
+      if(sum(as.data.frame(data_individual())[,input$notification_type])==0){
+        available_colnames <- available_colnames[-which(available_colnames == input$notification_type)]
+        selected_colnames <- selected_colnames[-which(selected_colnames == input$notification_type)]
+      }
+      # remove alias and value field
+      if(any(available_colnames %in% c("mortality_alias","mortality_value"))){
+        available_colnames <- available_colnames[-which(available_colnames %in% c("mortality_alias","mortality_value"))]
+      }
+      if(any(available_colnames %in% c("voltage_alias","voltage_value"))){
+        available_colnames <- available_colnames[-which(available_colnames %in% c("voltage_alias","voltage_value"))]
+      }
+      if(any(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))){
+        available_colnames <- available_colnames[-which(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))]
+      }
+      return(list(selected_colnames = selected_colnames, available_colnames = available_colnames))
+    })
         
-        
+    # create a reactiveValues object to store selections for data_fields
+    field_vals <- reactiveValues(checked = NULL)
+    
+    # save the checkbox state whenever the user changes it
+    observeEvent(input$data_fields, {
+      if(isFALSE(input$notification_type %in% input$data_fields)){
+        field_vals$checked <- c(input$data_fields,input$notification_type)
+      }else
+      if(input$notification_type %in% input$data_fields){
+        field_vals$checked <- input$data_fields  
+      }
+    })
+    
+    # update values checked when data_fields input
+    observe({
+      # check if reactive field_vals are in the available choices
+      valid_selected <- intersect(field_vals$checked, field_columns()$available_colnames)
+      # Update the data_fields element
+      updateCheckboxGroupInput(
+        session, 
+        inputId = "data_fields", 
+        choices = field_columns()$available_colnames,
+        selected = valid_selected
+      )
+      # Update the stored reactive state with the valid selection
+      field_vals$checked <- valid_selected
+    })   
+    
     # make checkBoxGroup for data fields to include in table
     output$ui_data_field_filter <- renderUI({
       # populate in checkboxGroupInput with reactive field_columns
