@@ -278,8 +278,8 @@ shinyModule <- function(input, output, session, data) {
       # now update the selectInput
       updateSelectInput(session,
                         inputId = "notification_type",
-                        choices = update_choices$notification_type,
-                        selected = update_choices$notification_type[1]
+                        choices = sort(update_choices$notification_type),
+                        selected = sort(update_choices$notification_type)[1]
       )
     }) 
   
@@ -347,8 +347,8 @@ shinyModule <- function(input, output, session, data) {
     output$ui_notification_type  <- renderUI({
       req(rv$table)
       selectInput(ns("notification_type"), label = "Select alert", 
-                  choices = unique(rv$table$notification_type),
-                  selected = unique(rv$table$notification_type)[1])
+                  choices = sort(unique(rv$table$notification_type)),
+                  selected = sort(unique(rv$table$notification_type))[1])
     })
   
     # make field names a reactive value
