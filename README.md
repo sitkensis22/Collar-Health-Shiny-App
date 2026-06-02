@@ -1,9 +1,7 @@
 
-# Collar Health Shiny App
+# MoveApps: Collar Health Shiny App
 
 <img width="1916" height="1038" alt="Screenshot 2026-06-02 at 3 02 51 PM (2)" src="https://github.com/user-attachments/assets/429971d7-3078-4f8e-a1d4-f5a83b04d423" />
-
-MoveApps
 
 Github repository: *github.com/sitkensis22/Collar-Health-Shiny-App* (*https://github.com/sitkensis22/Collar-Health-Shiny-App*)
 
