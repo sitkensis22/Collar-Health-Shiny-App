@@ -480,7 +480,7 @@ shinyModule <- function(input, output, session, data) {
 
   # make reactive output for ind table and downloading features
   ind_table_data <- reactive({
-    req(data_individual(),rv$data,input$individual_select,nrow(data_individual())>0)
+    req(data_individual(),rv$data,input$individual_select,nrow(data_individual())>0,input$data_fields)
     # store lat/longs from move2 object
     Latitude <- st_coordinates(data_individual())[,2]
     Longitude <- st_coordinates(data_individual())[,1]
@@ -501,12 +501,12 @@ shinyModule <- function(input, output, session, data) {
     # format timestamp as character
     ind_data[,mt_time_column(data_individual())] <- as.character(paste(ind_data[,mt_time_column(data_individual())],"UTC"))
     # filter by input data fields
-    return(ind_data[,field_columns()$selected_colnames])
+    return(ind_data[,input$data_fields])
   })
   
   # make datatable for individual data
     output$ind_table <- DT::renderDT({
-      req(all(colnames(ind_table_data()) %in% field_columns()$selected_colnames),nrow(ind_table_data())>0)
+      req(all(colnames(ind_table_data()) %in% input$data_fields),nrow(ind_table_data())>0)
       # render data table
       DT::datatable(ind_table_data(), 
                     rownames = FALSE, 
