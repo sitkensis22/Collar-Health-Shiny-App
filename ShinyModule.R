@@ -396,7 +396,7 @@ shinyModule <- function(input, output, session, data) {
    })
 
   output$ui_data_field_switch <- renderUI({
-    input_switch(id = ns("data_toggle"), label = "Show data fields", value = FALSE)
+    input_switch(id = ns("data_toggle"), label = "Show data fields", value = TRUE)
   })
   
   # make reactive data for all_table output and downloading features
