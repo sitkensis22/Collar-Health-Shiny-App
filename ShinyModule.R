@@ -33,6 +33,10 @@ library("viridis")
       temp_alerts <- tidyr::gather(temp_alerts, key = "notification_type", "count",mortality, cluster, nsd, voltage, gps_accuracy, 
                                    gps_transmission, gps_resurrection, tag_release) |> as.data.frame()
       colnames(temp_alerts)[1] <- mt_track_id_column(data)
+      # check to see if deployment_end_type exists, if not, add it and make all tags active
+      if(isFALSE("deployment_end_type" %in% colnames(mt_track_data(data)))){
+         data <- data |> mutate_track_data(deployment_end_type = rep("active",nrow(mt_track_data(data))))
+      }
       # get ids,status
       tag_status <- mt_track_data(data) |> dplyr::select(mt_track_id_column(data),"deployment_end_type")
       # set deployment_end_type to "status"
