@@ -311,6 +311,7 @@ shinyModule <- function(input, output, session, data) {
     data_individual <- reactive({
       req(rv$data,input$date_range,input$number_locations,input$individual_select)
       filtered_data <- filter_track_data(rv$data, .track_id = input$individual_select)
+      req(nrow(filtered_data) > 0)
       if(input$filter_toggle == "Date"){
         filtered_data2 <- filtered_data |> filter(between(as.Date(mt_time(filtered_data)), 
                                                           as.Date(input$date_range[1]),as.Date(input$date_range[2])))
@@ -651,8 +652,8 @@ leaf_map <- reactive({
               addCircles(data = data_individual() |> slice(c(1, n())),
                                label = ~label,
                                layerId = ~unique_id,
-                               opacity = 0.6,
-                               fillOpacity = 0.6,
+                               opacity = 1,
+                               fillOpacity = 1,
                                radius = 10,
                                color = c("green","red"),
                                fillColor = c("green","red"))
@@ -692,8 +693,8 @@ leaf_map <- reactive({
                 addCircles(data = data_individual() |> slice(c(1, n())),
                                  layerId = ~unique_id,
                                  label = ~label,
-                                 opacity = 0.6,
-                                 fillOpacity = 0.6,
+                                 opacity = 1,
+                                 fillOpacity = 1,
                                  radius = 40,
                                  color = c("green","red"),
                                  fillColor = c("green","red"))
