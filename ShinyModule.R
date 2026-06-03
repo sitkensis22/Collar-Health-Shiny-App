@@ -642,8 +642,8 @@ leaf_map <- reactive({
               # add alert data points
               addCircles(data = data_individual() |> filter(.data[[input$notification_type]] == 1),
                          layerId = ~unique_id,
-                         opacity = 1,
-                         fillOpacity = 1,
+                         opacity = 0.7,
+                         fillOpacity = 0.85,
                          label = ~label,
                          radius = 10, 
                          color = "#FF991C",
