@@ -120,10 +120,10 @@ shinyModuleUserInterface <- function(id, label) {
             tabPanel(title = "Map",
               conditionalPanel(
                 condition = "input.map_all == '0'", ns = ns,
-                    leafletOutput(ns("leafletMap"),width = "100%", height = "80vh")),
+                    withSpinner(leafletOutput(ns("leafletMap"),width = "100%", height = "80vh"))),
               conditionalPanel(
                 condition = "input.map_all == '1'", ns = ns,
-                    leafletOutput(ns("leaflet_allMap"),width = "100%", height = "80vh"))), 
+                    withSpinner(leafletOutput(ns("leaflet_allMap"),width = "100%", height = "80vh")))), 
             # tabPanel 2 - All data table   
             tabPanel(title = "All data", 
               DTOutput(ns("all_table"))),
