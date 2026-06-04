@@ -47,6 +47,13 @@ library("viridis")
       tag_status$status[which(is.na(tag_status$status))]  <- "active"
       # merge in deployment_end_type
       temp_alerts <- merge(temp_alerts, tag_status, by = mt_track_id_column(data))
+      # get most recent timestamp for each individual
+      last_locations <- data |> 
+        group_by(.data[[mt_track_id_column(data)]]) |> 
+        slice_max(order_by = .data[[mt_time_column(data)]], n = 1) |> as.data.frame() |>
+        select(mt_track_id_column(data),mt_time_column(data))
+      # merge in deployment_end_type
+      temp_alerts <- merge(temp_alerts, last_locations, by = mt_track_id_column(data))
       # return temp_alerts
       return(temp_alerts)
     }
@@ -218,16 +225,18 @@ shinyModule <- function(input, output, session, data) {
       # summarize alert table into counts of events over individuals
       summary_table <- rv$table |> group_by(.data[[mt_track_id_column(rv$data)]]) |> summarize(nAlerts = sum(count))
       # now add in status
-      summary_table <- merge(summary_table, unique(rv$table[,c(mt_track_id_column(rv$data),"status")]), by = mt_track_id_column(rv$data))
+      summary_table <- merge(summary_table, unique(rv$table[,c(mt_track_id_column(rv$data),"status",mt_time_column(rv$data))]), by = mt_track_id_column(rv$data))
       # get ids, tag_ids and stauts into tibble
       tag_info <- mt_track_data(rv$data) |> dplyr::select(mt_track_id_column(rv$data),"tag_local_identifier")
       # merge tag_local_identifier in with summary_table
       summary_table_merged <- merge(summary_table, tag_info, by = mt_track_id_column(rv$data))
       # reorganize table
-      summary_table_merged <- summary_table_merged[,c(1,4,3,2)]
+      summary_table_merged <- summary_table_merged[,c(1,5,3,2,4)]
       # update column names
-      colnames(summary_table_merged)[1:2] <- c("ind_id","device_id")
-      #    # create data table
+      colnames(summary_table_merged)[c(1:2,5)] <- c("ind_id","device_id","max_date")
+      # add UTC to max_date
+      summary_table_merged$max_date = paste(summary_table_merged$max_date,"UTC")
+      # create data table
       DT::datatable(as.data.frame(summary_table_merged), 
                     rownames = FALSE, 
                     selection = "single",
