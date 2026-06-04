@@ -626,7 +626,6 @@ leaf_map <- reactive({
                                label = ~label,
                                opacity = 1,
                                fillOpacity = 1,
-                               radius = 10,
                                color = c("green","red"),
                                fillColor = c("green","red")) %>%
               # add all data points
@@ -676,7 +675,6 @@ leaf_map <- reactive({
                            label = ~label,
                            opacity = 1,
                            fillOpacity = 1,
-                           radius = 10,
                            color = c("green","red"),
                            fillColor = c("green","red")) %>%
                 # add all data points
