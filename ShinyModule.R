@@ -1161,7 +1161,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
           quiet = TRUE
         ))
         # save zipped files
-        zip::zip(zipfile = file, files = list.files(targetDirFiles, full.names = TRUE),mode = "cherry-pick")
+        zip::zip(zipfile = file, files = list.files(targetDirFiles, pattern = "data-individual", full.names = TRUE),mode = "cherry-pick")
       }else  
       if(input$download_select == "Report"){
        # Parameters to pass to the Rmd
