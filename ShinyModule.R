@@ -1127,7 +1127,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
       }else
       if(input$download_select == "Shapefile"){
-        paste("data-individual_", Sys.Date(), ".shp", sep = "")
+        paste("data-individual_", Sys.Date(), ".zip", sep = "")
       }
     },
     content = function(file){
