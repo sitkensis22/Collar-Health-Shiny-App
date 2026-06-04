@@ -1138,7 +1138,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
       if(input$download_select == "Shapefile"){
-        suppressWarnings(write_sf(data, dsn = file, layer = file, driver = "ESRI Shapefile", append = FALSE)) 
+        suppressWarnings(write_sf(data_individual(), dsn = file, layer = file, driver = "ESRI Shapefile", append = FALSE)) 
       }else  
       if(input$download_select == "Report"){
        # Parameters to pass to the Rmd
