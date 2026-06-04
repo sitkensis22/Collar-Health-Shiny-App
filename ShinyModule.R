@@ -682,7 +682,6 @@ leaf_map <- reactive({
                            layerId = ~unique_id,
                            opacity = 0.3,
                            label = ~label,
-                           #popup = labels,
                            fillOpacity = 0.8,
                            radius = 10, 
                            color = "blue",
@@ -810,7 +809,7 @@ leaf_map_all <- reactive({
 # store user-adjusted leaflet map (zoom, and coordinates)
 user_map <- reactive({
   # call the Leaflet map
-  leafletProxy("leafletMap") %>%
+  leaf_map() %>%
   # store the view based on UI
   setView(lng = input$leafletMap_center$lng,
           lat = input$leafletMap_center$lat,
