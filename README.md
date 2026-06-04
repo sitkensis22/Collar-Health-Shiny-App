@@ -52,7 +52,7 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 **Open Movebank (`movebank_link`):** This button will open a new webpage tab of the study deployment page on Movebank. Note that the user must be logged into Movebank for this page to appear properly, which is recommended before the App is run and data editing commences. 
 
-**Select output (`download_select`):** Select the local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), collar health report (as an HTML file), or the location data (as a shapefile), with respective options being "All table", "Individual table", "Report", or "Shapefile". Default is "All table". 
+**Select output (`download_select`):** Select the local download of the "All data" table (as a .csv file), "Individual data" table (as a .csv file), collar health report (as an HTML file), or the location data (as a zipped folder), with respective options being "All table", "Individual table", "Report", or "Shapefile". Default is "All table". 
 
 **Download (`downloadData`):** This button will initiate the local download that is selected from the `download_select` dropdown menu.
 
