@@ -104,7 +104,7 @@ shinyModuleUserInterface <- function(id, label) {
             # data download features
             fluidRow(
               column(6,
-                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report"),
+                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report", "Shapefile" = "Shapefile),
                             selected = "All")),
               column(6,
                 div(style = "margin-top: 18%;",     
@@ -1110,14 +1110,17 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
   output$downloadData <- downloadHandler(
     filename = function() {
       if(input$download_select == "All"){
-      paste("data-all_", Sys.Date(), ".csv", sep = "")
+        paste("data-all_", Sys.Date(), ".csv", sep = "")
       }else
       if(input$download_select == "Individual"){
-      paste("data-individual_", Sys.Date(), ".csv", sep = "")
+        paste("data-individual_", Sys.Date(), ".csv", sep = "")
       }else
       if(input$download_select == "Report"){
-      paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
-      }  
+        paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
+      }else
+      ifinput$download_select == "Shapefile"){
+        paste("data-individual_", Sys.Date(), ".shp", sep = "")
+      }
     },
     content = function(file){
       if(input$download_select == "All"){
@@ -1126,6 +1129,9 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       if(input$download_select == "Individual"){
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
+      if(input$download_select == "Shapefile"){
+        st_write(data_individual(), file, append = FALSE)  
+      }else  
       if(input$download_select == "Report"){
        # Parameters to pass to the Rmd
         params <- list(data = rv$data, 
