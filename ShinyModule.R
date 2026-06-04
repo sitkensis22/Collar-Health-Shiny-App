@@ -16,7 +16,7 @@ library("shinyjs")
 library("shinyWidgets")
 library("tidyverse")
 library("viridis")
-
+library("zip")
 
   # helper function 1
   get_alertTable <- function(data){
@@ -1138,7 +1138,30 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         write.csv(ind_table_data(), file, row.names = FALSE)  
       }else
       if(input$download_select == "Shapefile"){
-        suppressWarnings(write_sf(data_individual(), dsn = file, layer = file, driver = "ESRI Shapefile", append = FALSE)) 
+        # create a temporary directory 
+        dir.create(targetDirFiles <- tempdir())
+        # Convert the move2 object into a standard sf data frame
+        sf_obj <- data_individual()
+        my_sf <- mt_as_event_attribute(sf_obj, names(mt_track_data(sf_obj)))
+        class(sf_obj) <- class(sf_obj) %>% setdiff("move2")
+        # 2. Identify and convert list columns into character strings
+        # (Excludes the 'geometry' column automatically)
+        sf_obj <- sf_obj %>%
+          mutate(across(
+            where(~ is.list(.x) && !inherits(.x, "sfc")), 
+            ~ map_chr(.x, ~ paste(as.character(.x), collapse = ", "))
+          ))
+        # write to shapefile
+        suppressWarnings(st_write(
+          obj = sf_obj, 
+          dsn = targetDirFiles, 
+          layer = paste0("data-individual_", Sys.Date()), 
+          driver = "ESRI Shapefile", 
+          delete_layer = TRUE,
+          quiet = TRUE
+        ))
+        # save zipped files
+        zip::zip(zipfile = file, files = list.files(targetDirFiles, full.names = TRUE),mode = "cherry-pick")
       }else  
       if(input$download_select == "Report"){
        # Parameters to pass to the Rmd
