@@ -660,8 +660,8 @@ leaf_map <- reactive({
               addCircles(data = data_individual() |> slice(c(1, n())),
                                label = ~label,
                                layerId = ~unique_id,
-                               opacity = 1,
-                               fillOpacity = 1,
+                               opacity = 0,
+                               fillOpacity = 0,
                                radius = 10,
                                color = c("green","red"),
                                fillColor = c("green","red"))
@@ -699,8 +699,8 @@ leaf_map <- reactive({
                 addCircles(data = data_individual() |> slice(c(1, n())),
                                  layerId = ~unique_id,
                                  label = ~label,
-                                 opacity = 1,
-                                 fillOpacity = 1,
+                                 opacity = 0,
+                                 fillOpacity = 0,
                                  radius = 10,
                                  color = c("green","red"),
                                  fillColor = c("green","red"))
