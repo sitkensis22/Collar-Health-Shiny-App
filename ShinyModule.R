@@ -1118,7 +1118,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       if(input$download_select == "Report"){
         paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
       }else
-      ifinput$download_select == "Shapefile"){
+      if(input$download_select == "Shapefile"){
         paste("data-individual_", Sys.Date(), ".shp", sep = "")
       }
     },
