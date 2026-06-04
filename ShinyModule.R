@@ -104,7 +104,7 @@ shinyModuleUserInterface <- function(id, label) {
             # data download features
             fluidRow(
               column(6,
-                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report", "Shapefile" = "Shapefile),
+                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report", "Shapefile" = "Shapefile"),
                             selected = "All")),
               column(6,
                 div(style = "margin-top: 18%;",     
