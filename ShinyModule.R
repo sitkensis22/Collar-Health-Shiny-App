@@ -703,11 +703,11 @@ leaf_map <- reactive({
 # Reactive value to store the clicked circle ID
 selected_circle <- reactiveVal(NULL)
 
-# 1. Handle Clicks: Pin or Unpin a label when a circle is clicked
+# handle clicks: pin or unpin a label when a circle is clicked
 observeEvent(input$leafletMap_shape_click, {
   clicked_id <- input$leafletMap_shape_click$id
   
-  # If the user clicks the same circle again, un-pin it
+  # if the user clicks the same circle again, un-pin it
   if(!is.null(selected_circle()) && selected_circle() == clicked_id){
     selected_circle(NULL)
     leafletProxy("leafletMap") %>% clearPopups()
@@ -810,7 +810,7 @@ leaf_map_all <- reactive({
 # store user-adjusted leaflet map (zoom, and coordinates)
 user_map <- reactive({
   # call the Leaflet map
-  leaf_map() %>%
+  leafletProxy("leafletMap") %>%
   # store the view based on UI
   setView(lng = input$leafletMap_center$lng,
           lat = input$leafletMap_center$lat,
