@@ -111,7 +111,7 @@ shinyModuleUserInterface <- function(id, label) {
             # data download features
             fluidRow(
               column(6,
-                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report", "Shapefile" = "Shapefile"),
+                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report","KML" = "KML","Shapefile" = "Shapefile"),
                             selected = "All")),
               column(6,
                 div(style = "margin-top: 18%;",     
@@ -1121,25 +1121,42 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         paste("data-all_", Sys.Date(), ".csv", sep = "")
       }else
       if(input$download_select == "Individual"){
-        paste("data-individual_", Sys.Date(), ".csv", sep = "")
+        paste("data-individual_",input$individual_select,"_", Sys.Date(), ".csv", sep = "")
       }else
       if(input$download_select == "Report"){
         paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
       }else
       if(input$download_select == "Shapefile"){
-        paste("data-individual_", Sys.Date(), ".zip", sep = "")
+        paste("data-individual_", input$individual_select,"_", Sys.Date(), ".zip", sep = "")
+      }else
+      if(input$download_select == "KML"){
+        paste("data-individual_", input$individual_select,"_", Sys.Date(), ".kml", sep = "")
       }
     },
     content = function(file){
       if(input$download_select == "All"){
-        write.csv(all_table_data(), file, row.names = FALSE)
+        # store all data table as temporary
+        temp_all_data <- all_table_data()
+        # change field name of timestamp to timestamp_UTC
+        colnames(temp_all_data)[which(colnames(temp_all_data) == "timestamp")] <- "timestamp_UTC"
+        # now strip UTC from the timestamp field
+        temp_all_data$timestamp_UTC <- substr(temp_all_data$timestamp_UTC,1,19)
+        # write to csv file
+        write.csv(temp_all_data, file, row.names = FALSE)
       }else
       if(input$download_select == "Individual"){
-        write.csv(ind_table_data(), file, row.names = FALSE)  
+        # store all data table as temporary
+        temp_ind_data <- ind_table_data()
+        # change field name of timestamp to timestamp_UTC
+        colnames(temp_ind_data)[which(colnames(temp_ind_data) == "timestamp")] <- "timestamp_UTC"
+        # now strip UTC from the timestamp field
+        temp_ind_data$timestamp_UTC <- substr(temp_ind_data$timestamp_UTC,1,19)
+        # write to csv file
+        write.csv(temp_ind_data, file, row.names = FALSE)  
       }else
       if(input$download_select == "Shapefile"){
         # create a temporary directory 
-        dir.create(targetDirFiles <- tempdir())
+        dir.create(targetDirFiles_shp <- tempdir())
         # Convert the move2 object into a standard sf data frame
         sf_obj <- data_individual()
         my_sf <- mt_as_event_attribute(sf_obj, names(mt_track_data(sf_obj)))
@@ -1154,32 +1171,58 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         # write to shapefile
         suppressWarnings(st_write(
           obj = sf_obj, 
-          dsn = targetDirFiles, 
-          layer = paste0("data-individual_", Sys.Date()), 
+          dsn = targetDirFiles_shp, 
+          layer = paste0("data-individual_",input$individual_select,"_",Sys.Date()), 
           driver = "ESRI Shapefile", 
           delete_layer = TRUE,
           quiet = TRUE
         ))
         # save zipped files
-        zip::zip(zipfile = file, files = list.files(targetDirFiles, pattern = "data-individual", full.names = TRUE),mode = "cherry-pick")
-      }else  
-      if(input$download_select == "Report"){
-       # Parameters to pass to the Rmd
-        params <- list(data = rv$data, 
-                       table = rv$table, 
-                       widget_data = user_map(), 
-                       individual_select = input$individual_select,
-                       individual_table = ind_table_data())
-        # Knit the document to the specified output file location
-        rmarkdown::render(
-          input = getAuxiliaryFilePath("auxiliary-file-a"),
-          output_format = "html_document",
-          output_file = file,
-          params = params,
-          envir = new.env(parent = globalenv())
-        )
-      }
+        zip::zip(zipfile = file, files = list.files(targetDirFiles_shp, pattern = "data-individual", full.names = TRUE),mode = "cherry-pick")
+    }else
+    if(input$download_select == "KML"){
+      # Convert the move2 object into a standard sf data frame
+      sf_obj <- data_individual()
+      my_sf <- mt_as_event_attribute(sf_obj, names(mt_track_data(sf_obj)))
+      class(sf_obj) <- class(sf_obj) %>% setdiff("move2")
+      # 2. Identify and convert list columns into character strings
+      # (Excludes the 'geometry' column automatically)
+      sf_obj <- sf_obj %>%
+        mutate(across(
+          where(~ is.list(.x) && !inherits(.x, "sfc")), 
+          ~ map_chr(.x, ~ paste(as.character(.x), collapse = ", "))
+        ))
+      # force object to be in EPSG 4326
+      sf_obj <- st_transform(sf_obj, crs = 4326)
+      # add timestamp to description
+      sf_obj <- sf_obj |> select(Description = mt_time_column(data_individual()),
+                                 Name = mt_time_column(data_individual()))
+      # write to shapefile
+      suppressWarnings(st_write(
+        obj = sf_obj, 
+        dsn = file, 
+        driver = "KML", 
+        delete_dsn = TRUE,
+        quiet = TRUE
+      ))
+    }else  
+    if(input$download_select == "Report"){
+      # Parameters to pass to the Rmd
+      params <- list(data = rv$data, 
+                     table = rv$table, 
+                     widget_data = user_map(), 
+                     individual_select = input$individual_select,
+                     individual_table = ind_table_data())
+      # Knit the document to the specified output file location
+      rmarkdown::render(
+        input = getAuxiliaryFilePath("auxiliary-file-a"),
+        output_format = "html_document",
+        output_file = file,
+        params = params,
+        envir = new.env(parent = globalenv())
+      )
     }
+  }
   )
   # end of server
   
