@@ -121,7 +121,7 @@ shinyModuleUserInterface <- function(id, label) {
           tabsetPanel(
             # tabPanel 1 - Leaflet map
             tabPanel(title = "Map",
-                withSpinner(leafletOutput(ns("leaflet_allMap"),width = "100%", height = "80vh"))),
+                withSpinner(leafletOutput(ns("leafletMap"),width = "100%", height = "80vh"))),
             # tabPanel 2 - All data table   
             tabPanel(title = "All data", 
               DTOutput(ns("all_table"))),
@@ -405,6 +405,23 @@ shinyModule <- function(input, output, session, data) {
           group_by(.data[[mt_track_id_column(rv$data)]]) |>
           slice_tail(n = input$number_locations_all)
       }
+      # add unique id to data for clicking on Leaflet map
+      filtered_data_all$unique_id <- 1:nrow(filtered_data_all)
+      # Format Device.ID 
+      n_times <- as.vector(table(as.character(mt_track_id(filtered_data_all))))
+      Device.ID <- rep(as.character(mt_track_data(filtered_data_all)$tag_local_identifier), times = n_times)
+      # store labels
+      filtered_data_all$label <- paste("<div style='font-size: 14px;'>",
+                                    "<b>Ind_id:</b>",mt_track_id(filtered_data_all),
+                                    "</br><b>Device_id:</b>",Device.ID,
+                                    "</br><b>Timestamp_UTC:</b>",as.character(mt_time(filtered_data_all)),
+                                    "</br><b>Lon:</b>",st_coordinates(filtered_data_all)[,1],
+                                    "</br><b>Lat:</b>",st_coordinates(filtered_data_all)[,2],
+                                    "</br><b>Status:</b>",ifelse(filtered_data_all$mortality==1,"dead","alive"),
+                                    "</div>") %>% lapply(htmltools::HTML)
+      # add lat/lon for leaflet popups
+      filtered_data_all$lng <- st_coordinates(filtered_data_all)[,1]
+      filtered_data_all$lat <- st_coordinates(filtered_data_all)[,2]
       # return data
       return(filtered_data_all)
     }) 
@@ -715,7 +732,6 @@ leaf_map <- reactive({
                          layerId = ~unique_id,
                          opacity = 0.3,
                          fillOpacity = 0.8,
-                         #popup = labels,
                          label = ~label,
                          radius = 10, 
                          color = "blue",
@@ -828,29 +844,15 @@ observeEvent(input$leafletMap_shape_mouseover, {
     }
   }
 })
-
-# now render leaflet map
-output$leafletMap <- renderLeaflet({
-    leaf_map()
-})
-
       
 # create leaflet map for plotting with choice of basemap
 leaf_map_all <- reactive({
         req(nrow(data_all()) > 0)
          temp_data <- data_all()
-         temp_data$lon <- st_coordinates(temp_data)[,1]
-         temp_data$lat <- st_coordinates(temp_data)[,2]
          pal <- colorFactor(
           palette = "viridis", # explicitly generate a number of colors
           domain = mt_track_id(temp_data),
           na.color = "transparent")
-         labels <- paste("<b>Ind_id:</b>",mt_track_id(temp_data),
-                "</br><b>Device_id:</b>",mt_track_data(temp_data)$tag_local_identifier,
-                "</br><b>Timestamp_UTC:</b>",mt_time(temp_data),
-                "</br><b>Lon:</b>",temp_data$lon,
-                "</br><b>Lat:</b>",temp_data$lat,
-                "</br><b>Status:</b>",ifelse(temp_data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
          map2 <- leaflet() %>% 
               # add scale bar
               addScaleBar(position = "bottomleft", 
@@ -865,7 +867,8 @@ leaf_map_all <- reactive({
               # add all data points
                addCircles(data = temp_data,
                          opacity = 0.3,
-                         label = labels,
+                         layerId = ~unique_id,
+                         label = ~label,
                          fillOpacity = 0.8,
                          radius = 10, 
                          color = ~pal(mt_track_id(temp_data)),
@@ -885,7 +888,7 @@ leaf_map_all <- reactive({
   })    
 
 # render leaflet map depending on map_all input
-output$leaflet_allMap <- renderLeaflet({
+output$leafletMap <- renderLeaflet({
    if(isFALSE(input$map_all)){
      leaf_map()
    }else
@@ -1246,7 +1249,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       }else
       if(input$download_select == "Shapefile"){
         # create a temporary directory 
-        suppressWarnings(dir.create(targetDirFiles_shp <- tempdir()))
+        dir.create(targetDirFiles_shp <- tempdir())
         # Convert the move2 object into a standard sf data frame
       if(isFALSE(input$map_all)){
         sf_obj <- data_individual()
