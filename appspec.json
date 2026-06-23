@@ -54,6 +54,9 @@
         "name": "viridis"
       },
       {
+        "name": "xml2"
+      },
+      {
         "name": "zip"
       }
     ]
