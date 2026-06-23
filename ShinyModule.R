@@ -205,11 +205,6 @@ shinyModule <- function(input, output, session, data) {
       input_switch(id = ns("status_toggle"), label = "Filter by status", value = FALSE)
     })
   
-    # create switch to filter individuals by only those with event alerts
-    #output$ui_map_all <- renderUI({
-    #  input_switch(id = ns("map_all"), label = "Map all individuals", value = FALSE)
-    #})
-    
     # build data table for DT with ID, tag_local_identifier, and number of notifications
     output$info_table <- DT::renderDT({
       req(rv)
@@ -1251,7 +1246,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       }else
       if(input$download_select == "Shapefile"){
         # create a temporary directory 
-        dir.create(targetDirFiles_shp <- tempdir())
+        suppressWarnings(dir.create(targetDirFiles_shp <- tempdir()))
         # Convert the move2 object into a standard sf data frame
       if(isFALSE(input$map_all)){
         sf_obj <- data_individual()
