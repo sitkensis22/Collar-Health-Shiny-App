@@ -8,6 +8,7 @@ library("kableExtra")
 library("knitr")
 library("leaflet")
 library("plotly")
+library("purrr")
 library("rmarkdown")
 library("shiny")
 library("shinycssloaders")
@@ -16,6 +17,7 @@ library("shinyjs")
 library("shinyWidgets")
 library("tidyverse")
 library("viridis")
+library("xml2")
 library("zip")
 
   # helper function 1
@@ -88,39 +90,31 @@ shinyModuleUserInterface <- function(id, label) {
             uiOutput(ns("ui_select_individual")),
             uiOutput(ns("ui_notification_type")),
             uiOutput(ns("ui_basemap_type")),
-            uiOutput(ns("ui_data_filter")),
-            conditionalPanel(
-              condition = "input.filter_toggle == 'Date'", ns = ns,
-                uiOutput(ns("ui_data_range"))
-            ),
-            conditionalPanel(
-              condition = "input.filter_toggle == 'Number of locations'", ns = ns,
-              uiOutput(ns("ui_nlocations"))
-            ),
-            h6("Data tools"),
-            fluidRow(
-              column(6,
-                     # create ui for actionButton to remove individuals
-                     div(style = "margin-bottom: 5%;",   
-                     shiny::actionButton(inputId = ns("delete"), label = "Remove individual", class = "btn-warning"))),
-              column(6,
-                     div(style = "margin-bottom: 5%;",
-                     shiny::actionButton(inputId = ns("movebank_link"), label = "Open movebank", class = "btn-info")))
-      
-            ),
-            # data download features
-            fluidRow(
-              column(6,
-                selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report","KML" = "KML","Shapefile" = "Shapefile"),
-                            selected = "All")),
-              column(6,
-                div(style = "margin-top: 18%;",     
-                downloadButton(ns("downloadData"), "Download")))),
-            uiOutput(ns("ui_data_field_switch")),
-            conditionalPanel(
-              condition = "input.data_toggle == '1'", ns = ns,
-              uiOutput(ns("ui_data_field_filter")))
-        ),
+            # dynamic control for data filter controls based on input$map_all
+            uiOutput(ns("dynamic_filter_toggle")),
+            uiOutput(ns("dynamic_data_filter")),
+              h6("Data tools"),
+              fluidRow(
+                column(6,
+                       # create ui for actionButton to remove individuals
+                       div(style = "margin-bottom: 5%;",   
+                       shiny::actionButton(inputId = ns("delete"), label = "Remove individual", class = "btn-warning"))),
+                column(6,
+                       div(style = "margin-bottom: 5%;",
+                       shiny::actionButton(inputId = ns("movebank_link"), label = "Open movebank", class = "btn-info")))
+        
+              ),
+              # data download features
+              fluidRow(
+                column(6,
+                  selectInput(ns("download_select"), label = "Select output", choices = c("All table" = "All","Individual table" = "Individual","Report" = "Report","KML" = "KML","Shapefile" = "Shapefile"),
+                              selected = "All")),
+                column(6,
+                  div(style = "margin-top: 18%;",     
+                  downloadButton(ns("downloadData"), "Download")))),
+                  uiOutput(ns("ui_data_field_switch")),
+                  uiOutput(ns("dynamic_data_fields"))
+              ),
         mainPanel(width = 9,
           tabsetPanel(
             # tabPanel 1 - Leaflet map
@@ -151,7 +145,7 @@ shinyModuleUserInterface <- function(id, label) {
 shinyModule <- function(input, output, session, data) {
     # all IDs of UI functions need to be wrapped in ns()
     ns <- session$ns
-  
+    
     # create dataset and alert table as reactiveValues
     rv <- reactiveValues(data = data, table = get_alertTable(data))
     
@@ -190,18 +184,18 @@ shinyModule <- function(input, output, session, data) {
         rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
         rv$table <- rv$table |> slice(which(status == "active"))
       }else  
-        if(isTRUE(input$alert_toggle) & isFALSE(input$status_toggle)){
-          temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
-          temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
-          rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
-        }else
-          if(isFALSE(input$alert_toggle) & isTRUE(input$status_toggle)){
-            rv$table <- get_alertTable(rv$data)
-            rv$table <- rv$table |> slice(which(status == "active"))
-          }else
-            if(isFALSE(input$alert_toggle) & isFALSE(input$status_toggle)){
-              rv$table <- get_alertTable(rv$data)
-            }
+      if(isTRUE(input$alert_toggle) & isFALSE(input$status_toggle)){
+      temp_alert_table <- get_alertTable(rv$data) |> group_by(.data[[mt_track_id_column(rv$data)]]) |> mutate(sumCounts = sum(count)) |> ungroup()
+      temp_alert_table <- temp_alert_table |> as.data.frame() |> filter(sumCounts > 0)
+      rv$table <- temp_alert_table |> dplyr::select(-sumCounts)
+      }else
+      if(isFALSE(input$alert_toggle) & isTRUE(input$status_toggle)){
+        rv$table <- get_alertTable(rv$data)
+        rv$table <- rv$table |> slice(which(status == "active"))
+      }else
+      if(isFALSE(input$alert_toggle) & isFALSE(input$status_toggle)){
+        rv$table <- get_alertTable(rv$data)
+      }
     }) %>% bindEvent(input$alert_toggle,input$status_toggle)
     
     # create switch to filter individuals by only those with event alerts
@@ -233,9 +227,9 @@ shinyModule <- function(input, output, session, data) {
       # reorganize table
       summary_table_merged <- summary_table_merged[,c(1,5,3,2,4)]
       # update column names
-      colnames(summary_table_merged)[c(1:2,5)] <- c("ind_id","device_id","max_date")
-      # add UTC to max_date
-      summary_table_merged$max_date = paste(summary_table_merged$max_date,"UTC")
+      colnames(summary_table_merged)[c(1:2,5)] <- c("ind_id","device_id","recent_date_UTC")
+      # set date as a character field
+      summary_table_merged$recent_date_UTC <- as.character(summary_table_merged$recent_date_UTC)
       # create data table
       DT::datatable(as.data.frame(summary_table_merged), 
                     rownames = FALSE, 
@@ -248,12 +242,13 @@ shinyModule <- function(input, output, session, data) {
                                    info = FALSE,
                                    pageLength = 5,
                                    columnDefs = list(
-                                     list(className = 'dt-left', targets = "_all"))))
+                                     list(className = 'dt-left', targets = "_all")))) |>
+        formatStyle(columns = colnames(summary_table_merged), fontSize = '15px')
     }) 
     
     # select individual
     output$ui_select_individual <- renderUI({
-      req(rv$table)
+      req(rv)
       selectInput(ns("individual_select"), label = "Select individual", choices = unique(rv$table[,mt_track_id_column(rv$data)]), 
                   selected = rv$table[1,mt_track_id_column(rv$data)])
     })
@@ -291,58 +286,163 @@ shinyModule <- function(input, output, session, data) {
                         selected = sort(update_choices$notification_type)[1]
       )
     }) 
-  
-    # radioButton for filter type
-    output$ui_data_filter <- renderUI({
-      radioButtons(inputId = ns("filter_toggle"), label = "Select filter",
-                   choices = c("Date","Number of locations"), selected = "Date", inline = TRUE)
+    
+    # reactive value to track state of map_all
+    active_input_toggle <- reactiveVal(TRUE)
+    
+    # toggle the state when the map_all input is changed
+    observeEvent(input$map_all, {
+      active_input_toggle(!active_input_toggle())
     })
     
-    # filter based on data range
-      output$ui_data_range  <- renderUI({
+    output$dynamic_filter_toggle <- renderUI({
+      # toggle based on map_all to change UI inputs for date_range and number_locations
+      if(!active_input_toggle()){
+          radioButtons(inputId = ns("filter_toggle"), label = "Select filter",
+                     choices = c("Date","Number of locations"), selected = "Date", inline = TRUE)
+      }else
+      if(active_input_toggle()){  
+        radioButtons(inputId = ns("filter_toggle_all"), label = "Select filter",
+                     choices = c("Date","Number of locations"), selected = "Date", inline = TRUE)
+      }
+    })  
+    
+    # reactive value to track state of filter_toggle
+    active_input_filter <- reactiveVal(TRUE)
+    
+    # toggle the state when the map_all input is changed
+    observeEvent(input$filter_toggle, {
+      active_input_filter(!active_input_filter())
+    })
+    
+    # toggle the state when the map_all input is changed
+    observeEvent(input$filter_toggle_all, {
+      active_input_filter(!active_input_filter())
+    })
+    
+    output$dynamic_data_filter <- renderUI({
+      req(rv$data, input$individual_select)
+      if(!active_input_toggle() && active_input_filter()){
         min_date = suppressWarnings(min(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
         max_date = suppressWarnings(max(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
         req(as.character(min_date) != "Inf" && as.character(max_date) != "Inf")
         dateRangeInput(inputId = ns("date_range"), label = "Select date range", 
                        start = min_date, end = max_date,
                        min = min_date, max = max_date)
-      })
-  
-    # filter based on number of locations
-    output$ui_nlocations <- renderUI({
-      max_rows <- nrow(filter_track_data(rv$data, .track_id = input$individual_select))
-      req(max_rows >= 1)
-      sliderInput(inputId = ns("number_locations"), label = "Select number of locations", 
-                  min = 1, max = max_rows, value = max_rows, step = 1)
-    }) 
+      }else
+      if(!active_input_toggle() && !active_input_filter()){
+        max_rows <- nrow(filter_track_data(rv$data, .track_id = input$individual_select))
+        req(max_rows >= 1)
+        sliderInput(inputId = ns("number_locations"), label = "Select number of locations", 
+                    min = 1, max = max_rows, value = max_rows, step = 1)
+      }else
+      if(active_input_toggle() && active_input_filter()){
+        temp_data <- rv$data
+        min_date = suppressWarnings(min(as.Date(temp_data |> mt_time())))
+        max_date = suppressWarnings(max(as.Date(temp_data |> mt_time())))
+        req(as.character(min_date) != "Inf" && as.character(max_date) != "Inf")
+        dateRangeInput(inputId = ns("date_range_all"), label = "Select date range", 
+                       start = min_date, end = max_date,
+                       min = min_date, max = max_date) 
+      }else
+      if(active_input_toggle() && !active_input_filter()){
+        max_rows <- max(as.vector(table(mt_track_id(rv$data))), na.rm = TRUE)
+        req(max_rows >= 1)
+        sliderInput(inputId = ns("number_locations_all"), label = "Select number of locations per individual", 
+                    min = 1, max = max_rows, value = max_rows, step = 1)
+      }
+    })  
+    
+    # initialize the historical state storage
+    stored_states <- reactiveValues()
+    
+    # reactive to generate a unique key for the current individual + toggle view
+    current_state_key <- reactive({
+      req(input$individual_select, input$filter_toggle)
+      paste0(input$individual_select, "_", input$filter_toggle)
+    })
+    
+    # save state: capture inputs whenever the user moves the slider or changes the dates
+    observe({
+      req(current_state_key(), input$date_range, input$number_locations)
+      
+      # Store the current values under the unique key
+      stored_states[[current_state_key()]] <- list(
+        date_range = input$date_range,
+        num_locs = input$number_locations
+      )
+    })
+    
+    # restore state: update UI inputs when the individual or toggle switches
+    observeEvent(current_state_key(), {
+      req(current_state_key())
+      
+      # Check if we have saved history for this specific person + toggle combo
+      history <- stored_states[[current_state_key()]]
+      
+      if (!is.null(history)) {
+        # History exists! Restore the exact previous selections safely
+        updateDateRangeInput(
+          session = session,
+          inputId = "date_range",
+          start = history$date_range[1], # First date element
+          end = history$date_range[2]    # Second date element
+        )
+        
+        updateSliderInput(
+          session = session,
+          inputId = "number_locations",
+          value = history$num_locs
+        )
+      }
+    })
     
     # data filter for overall individual
     data_individual <- reactive({
-      req(rv$data,input$date_range,input$number_locations,input$individual_select)
+      req(rv$data,input$individual_select,input$number_locations,input$date_range)
       filtered_data <- filter_track_data(rv$data, .track_id = input$individual_select)
       req(nrow(filtered_data) > 0)
       if(input$filter_toggle == "Date"){
         filtered_data2 <- filtered_data |> filter(between(as.Date(mt_time(filtered_data)), 
                                                           as.Date(input$date_range[1]),as.Date(input$date_range[2])))
       }else
-        if(input$filter_toggle == "Number of locations"){
-          filtered_data2 <- filtered_data |> slice_tail(n=input$number_locations)
-        }
+      if(input$filter_toggle == "Number of locations"){
+        filtered_data2 <- filtered_data |> slice_tail(n=input$number_locations)
+      }
       # add unique id to data for clicking on Leaflet map
       filtered_data2$unique_id <- 1:nrow(filtered_data2)
       # add label for Leaflet map
       # store labels
       filtered_data2$label <- paste("<div style='font-size: 14px;'>",
-                                    "timestamp:",paste(mt_time(filtered_data2),"UTC"),
-                                    "</br>lon:",st_coordinates(filtered_data2)[,1],
-                                    "</br>lat:",st_coordinates(filtered_data2)[,2],
-                                    "</br>status:",ifelse(filtered_data2$mortality==1,"dead","alive"),
+                                    "<b>Ind_id:</b>",mt_track_id(filtered_data2),
+                                    "</br><b>Device_id:</b>",mt_track_data(filtered_data2)$tag_local_identifier,
+                                    "</br><b>Timestamp_UTC:</b>",as.character(mt_time(filtered_data2)),
+                                    "</br><b>Lon:</b>",st_coordinates(filtered_data2)[,1],
+                                    "</br><b>Lat:</b>",st_coordinates(filtered_data2)[,2],
+                                    "</br><b>Status:</b>",ifelse(filtered_data2$mortality==1,"dead","alive"),
                                     "</div>") %>% lapply(htmltools::HTML)
       # add lat/lon for leaflet popups
       filtered_data2$lng <- st_coordinates(filtered_data2)[,1]
       filtered_data2$lat <- st_coordinates(filtered_data2)[,2]
       # return data
       return(filtered_data2)
+    }) 
+    
+    # data filter for all individuals
+    data_all <- reactive({
+      req(rv$data,input$number_locations_all,input$date_range_all)
+      if(input$filter_toggle_all == "Date"){
+        filtered_data_all <- rv$data |> filter(between(as.Date(mt_time(rv$data)), 
+                                                          as.Date(input$date_range_all[1]),as.Date(input$date_range_all[2])))
+      }else
+      if(input$filter_toggle_all == "Number of locations"){
+        # need to keep same number of locations per individual as they are reduced
+        filtered_data_all <- rv$data |>
+          group_by(.data[[mt_track_id_column(rv$data)]]) |>
+          slice_tail(n = input$number_locations_all)
+      }
+      # return data
+      return(filtered_data_all)
     }) 
     
     # select individual
@@ -410,47 +510,56 @@ shinyModule <- function(input, output, session, data) {
         available_colnames <- available_colnames[-which(available_colnames %in% c("gps_accuracy_alias","gps_accuracy_value","gps_accuracy_prop"))]
       }
       return(list(selected_colnames = selected_colnames, available_colnames = available_colnames))
-    })
+    }) 
         
-    # create a reactiveValues object to store selections for data_fields
-    field_vals <- reactiveValues(checked = NULL)
-    
-    # save the checkbox state whenever the user changes it
-    observeEvent(input$data_fields, {
-      if(isFALSE(input$notification_type %in% input$data_fields)){
-        field_vals$checked <- c(input$data_fields,input$notification_type)
-      }else
-      if(input$notification_type %in% input$data_fields){
-        field_vals$checked <- input$data_fields  
-      }
-    })
-    
-    # update values checked when data_fields input
-    observe({
-      # check if reactive field_vals are in the available choices
-      valid_selected <- intersect(field_vals$checked, field_columns()$available_colnames)
-      # Update the data_fields element
-      updateCheckboxGroupInput(
-        session, 
-        inputId = "data_fields", 
-        choices = field_columns()$available_colnames,
-        selected = valid_selected
-      )
-      # Update the stored reactive state with the valid selection
-      field_vals$checked <- valid_selected
-    })   
-    
-    # make checkBoxGroup for data fields to include in table
-    output$ui_data_field_filter <- renderUI({
-      # populate in checkboxGroupInput with reactive field_columns
-      checkboxGroupInput(inputId = ns("data_fields"), label = "Select data fields",
-                         choices = field_columns()$available_colnames,
-                         selected = field_columns()$selected_colnames)
-   })
-
+  # data toggle switch to show data fields or not
   output$ui_data_field_switch <- renderUI({
     input_switch(id = ns("data_toggle"), label = "Show data fields", value = TRUE)
   })
+  
+  # create a reactiveValues object to store selections for data_fields
+  field_vals <- reactiveValues(checked = NULL)
+  
+  # save the checkbox state whenever the user changes it
+  observeEvent(input$data_fields, {
+    if(isFALSE(input$notification_type %in% input$data_fields)){
+      field_vals$checked <- c(input$data_fields,input$notification_type)
+    }else
+      if(input$notification_type %in% input$data_fields){
+        field_vals$checked <- input$data_fields  
+      }
+  })
+  
+  output$dynamic_data_fields <- renderUI({
+    req(field_columns()$available_colnames,field_columns()$selected_colnames,input$data_toggle)
+    # 3. Render the UI
+    if(isTRUE(input$data_toggle)){
+    checkboxGroupInput(
+      inputId = ns("data_fields"), 
+      label = "Select data fields",
+      choices = field_columns()$available_colnames, 
+      selected = field_columns()$selected_colnames
+    )
+    }else
+    NULL
+  })
+  
+  # update values checked when data_fields input
+  observe({
+    req(input$data_fields)
+   # check if reactive field_vals are in the available choices
+   valid_selected <- intersect(field_vals$checked, field_columns()$available_colnames)
+    # Update the data_fields element
+    updateCheckboxGroupInput(
+      session, 
+      inputId = "data_fields", 
+      choices = field_columns()$available_colnames,
+      selected = valid_selected
+    )
+    # Update the stored reactive state with the valid selection
+    field_vals$checked <- valid_selected
+  })  
+  
   
   # make reactive data for all_table output and downloading features
   all_table_data <- reactive({
@@ -615,7 +724,7 @@ shinyModule <- function(input, output, session, data) {
 # create leaflet map for plotting with choice of basemap
 leaf_map <- reactive({
     req(nrow(data_individual()) > 0,input$notification_type)
-    # map data that has alertsa
+    # map data that has alerts
     if(nrow(data_individual() |> filter(.data[[input$notification_type]] == 1)) > 0){
       # now plot leatlet map
       map1 <- leaflet() %>% 
@@ -764,20 +873,20 @@ output$leafletMap <- renderLeaflet({
       
 # create leaflet map for plotting with choice of basemap
 leaf_map_all <- reactive({
-        req(nrow(rv$data) > 0)
-         temp_data <- rv$data
+        req(nrow(data_all()) > 0)
+         temp_data <- data_all()
          temp_data$lon <- st_coordinates(temp_data)[,1]
          temp_data$lat <- st_coordinates(temp_data)[,2]
          pal <- colorFactor(
           palette = "viridis", # explicitly generate a number of colors
           domain = mt_track_id(temp_data),
           na.color = "transparent")
-         labels <- paste("ind_id:",mt_track_id(temp_data),
-                "</br>device_id:",mt_track_data(temp_data)$tag_local_identifier,
-                "</br>timestamp:",paste(mt_time(temp_data),"UTC"),
-                "</br>lon:",temp_data$lon,
-                "</br>lat:",temp_data$lat,
-                "</br>status:",ifelse(temp_data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
+         labels <- paste("<b>Ind_id:</b>",mt_track_id(temp_data),
+                "</br><b>Device_id:</b>",mt_track_data(temp_data)$tag_local_identifier,
+                "</br><b>Timestamp_UTC:</b>",mt_time(temp_data),
+                "</br><b>Lon:</b>",temp_data$lon,
+                "</br><b>Lat:</b>",temp_data$lat,
+                "</br><b>Status:</b>",ifelse(temp_data$mortality==1,"dead","alive")) %>% lapply(htmltools::HTML)
          map2 <- leaflet() %>% 
               # add scale bar
               addScaleBar(position = "bottomleft", 
@@ -1127,10 +1236,20 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         paste("collar-health-report_",input$individual_select,"_", Sys.Date(), ".html", sep = "") 
       }else
       if(input$download_select == "Shapefile"){
-        paste("data-individual_", input$individual_select,"_", Sys.Date(), ".zip", sep = "")
+        if(isFALSE(input$map_all)){
+          paste("data-individual_",input$individual_select,"_",Sys.Date(),".zip", sep = "")
+        }else
+        if(isTRUE(input$map_all)){
+          paste("data-all_", Sys.Date(), ".zip", sep = "")
+        }
       }else
       if(input$download_select == "KML"){
-        paste("data-individual_", input$individual_select,"_", Sys.Date(), ".kml", sep = "")
+        if(isFALSE(input$map_all)){
+          paste("data-individual_",input$individual_select,"_",Sys.Date(),".kml", sep = "")
+        }else
+        if(isTRUE(input$map_all)){
+          paste("data-all_", Sys.Date(), ".kml", sep = "")
+        }  
       }
     },
     content = function(file){
@@ -1158,6 +1277,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         # create a temporary directory 
         dir.create(targetDirFiles_shp <- tempdir())
         # Convert the move2 object into a standard sf data frame
+      if(isFALSE(input$map_all)){
         sf_obj <- data_individual()
         my_sf <- mt_as_event_attribute(sf_obj, names(mt_track_data(sf_obj)))
         class(sf_obj) <- class(sf_obj) %>% setdiff("move2")
@@ -1179,32 +1299,195 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
         ))
         # save zipped files
         zip::zip(zipfile = file, files = list.files(targetDirFiles_shp, pattern = "data-individual", full.names = TRUE),mode = "cherry-pick")
+      }else
+      if(isTRUE(input$map_all)){
+          sf_obj <- data_all()
+          my_sf <- mt_as_event_attribute(sf_obj, names(mt_track_data(sf_obj)))
+          class(sf_obj) <- class(sf_obj) %>% setdiff("move2")
+          # 2. Identify and convert list columns into character strings
+          # (Excludes the 'geometry' column automatically)
+          sf_obj <- sf_obj %>%
+            mutate(across(
+              where(~ is.list(.x) && !inherits(.x, "sfc")), 
+              ~ map_chr(.x, ~ paste(as.character(.x), collapse = ", "))
+            ))
+          # write to shapefile
+          suppressWarnings(st_write(
+            obj = sf_obj, 
+            dsn = targetDirFiles_shp, 
+            layer = paste0("data-all_","_",Sys.Date()), 
+            driver = "ESRI Shapefile", 
+            delete_layer = TRUE,
+            quiet = TRUE
+          ))
+          # save zipped files
+          zip::zip(zipfile = file, files = list.files(targetDirFiles_shp, pattern = "data-all", full.names = TRUE),mode = "cherry-pick")
+        }
     }else
     if(input$download_select == "KML"){
-      # Convert the move2 object into a standard sf data frame
-      sf_obj <- data_individual()
-      my_sf <- mt_as_event_attribute(sf_obj, names(mt_track_data(sf_obj)))
-      class(sf_obj) <- class(sf_obj) %>% setdiff("move2")
-      # 2. Identify and convert list columns into character strings
-      # (Excludes the 'geometry' column automatically)
-      sf_obj <- sf_obj %>%
-        mutate(across(
-          where(~ is.list(.x) && !inherits(.x, "sfc")), 
-          ~ map_chr(.x, ~ paste(as.character(.x), collapse = ", "))
-        ))
-      # force object to be in EPSG 4326
-      sf_obj <- st_transform(sf_obj, crs = 4326)
-      # add timestamp to description
-      sf_obj <- sf_obj |> select(Description = mt_time_column(data_individual()),
-                                 Name = mt_time_column(data_individual()))
-      # write to shapefile
-      suppressWarnings(st_write(
-        obj = sf_obj, 
-        dsn = file, 
-        driver = "KML", 
-        delete_dsn = TRUE,
-        quiet = TRUE
-      ))
+      if(isFALSE(input$map_all)){
+      # helper function to sanitize text fields for Google Maps
+      clean_xml_text <- function(text) {
+        if (is.null(text) || is.na(text)) return("")
+        text <- gsub("&", "&amp;", text)
+        text <- gsub("<", "&lt;", text)
+        text <- gsub(">", "&gt;", text)
+        return(text)
+      }
+      kml_body <- ""
+        # Subset move2 object for this specific animal
+        ind_data <- data_individual()
+        description = as.character(mt_track_data(ind_data )$name[1])
+        # Extract spatial coordinates matrix and native timestamps
+        coords_mat <- st_coordinates(ind_data)
+        timestamps <- mt_time(ind_data)
+        device.id <- rep(as.character(mt_track_data(ind_data)$tag_local_identifier), nrow(ind_data))
+        clean_ind_name <- clean_xml_text(as.character(unique(mt_track_id(ind_data))))
+        # Start a folder container for the individual
+        kml_body <- paste0(kml_body, '    <Folder>\n', '      <name>', clean_ind_name, '</name>\n')
+        # Loop over every GPS point row for this animal
+        for (i in 1:nrow(ind_data)){
+          # Extract metadata fields for the current row
+          current_time  <- clean_xml_text(format(timestamps[i], "%Y-%m-%d %H:%M:%S UTC"))
+          Lon <- coords_mat[i, "X"]
+          Lat <- coords_mat[i, "Y"]
+          # Extract the custom extended attributes
+          Device.id = clean_xml_text(device.id[i])
+          Status = clean_xml_text(ifelse(ind_data$mortality[i]==1,"dead","alive"))
+          # Construct an individual Placemark point layer
+          kml_body <- paste0(
+            kml_body,
+            '      <Placemark>\n',
+            '        <name>', clean_ind_name, ' (Point ', i, ')</name>\n',
+            '        <description>', description, '</description>\n',
+            
+            # Inject Extended Data Schema Table
+            '        <ExtendedData>\n',
+            '          <Data name="Device.id">\n',
+            '            <value>', Device.id, '</value>\n',
+            '          </Data>\n',
+            '          <Data name="Timestamp">\n',
+            '            <value>', current_time, '</value>\n',
+            '          </Data>\n',
+            '          <Data name="Lat">\n',
+            '            <value>', Lat, '</value>\n',
+            '          </Data>\n',
+            '          <Data name="Lon">\n',
+            '            <value>', Lon, '</value>\n',
+            '          </Data>\n',
+            '          <Data name="Status">\n',
+            '            <value>', Status, '</value>\n',
+            '          </Data>\n',
+            '        </ExtendedData>\n',
+            
+            # Spatial Geometry Node
+            '        <Point>\n',
+            '          <coordinates>', Lon, ',', Lat, ',0</coordinates>\n',
+            '        </Point>\n',
+            '      </Placemark>\n'
+          )
+        }
+        # Close individual folder block
+        kml_body <- paste0(kml_body, '    </Folder>\n')
+        # Assemble and save clean file
+        full_kml_string <- paste0(
+        '<?xml version="1.0" encoding="UTF-8"?>\n',
+        '<kml xmlns="http://opengis.net">\n',
+        '  <Document>\n',
+        '    <name>Move2 Extended Points Export</name>\n',
+        kml_body,
+        '  </Document>\n',
+        '</kml>'
+        )
+        # Render and enforce XML compliance 
+        final_doc <- read_xml(full_kml_string)
+        write_xml(final_doc, file)
+      }else
+      if(isTRUE(input$map_all)){
+        # helper function to sanitize text fields for Google Maps
+        clean_xml_text <- function(text) {
+          if (is.null(text) || is.na(text)) return("")
+          text <- gsub("&", "&amp;", text)
+          text <- gsub("<", "&lt;", text)
+          text <- gsub(">", "&gt;", text)
+          return(text)
+        }
+        # extract individuals tracks
+        individual_ids <- unique(mt_track_id(data_all()))
+        kml_body <- ""
+        # Loop over individuals and points
+        for(k in 1:length(individual_ids)){
+          # Subset move2 object for this specific animal
+          ind_data <- data_all()[mt_track_id(data_all()) == individual_ids[k], ]
+          description = as.character(mt_track_data(ind_data)$name[1])
+          # Extract spatial coordinates matrix and native timestamps
+          coords_mat <- st_coordinates(ind_data)
+          timestamps <- mt_time(ind_data)
+          device.id <- rep(as.character(mt_track_data(ind_data)$tag_local_identifier), nrow(ind_data))
+          clean_ind_name <- clean_xml_text(as.character(individual_ids[k]))
+          # Start a folder container for the individual
+          kml_body <- paste0(kml_body, '    <Folder>\n', '      <name>', clean_ind_name, '</name>\n')
+          # Loop over every GPS point row for this animal
+          for (i in 1:nrow(ind_data)) {
+            # Extract metadata fields for the current row
+            current_time  <- clean_xml_text(format(timestamps[i], "%Y-%m-%d %H:%M:%S UTC"))
+            Lon <- coords_mat[i, "X"]
+            Lat <- coords_mat[i, "Y"]
+            # Extract the custom extended attributes
+            Device.id = clean_xml_text(device.id[i])
+            Status = clean_xml_text(ifelse(ind_data$mortality[i]==1,"dead","alive"))
+            # Construct an individual Placemark point layer
+            kml_body <- paste0(
+              kml_body,
+              '      <Placemark>\n',
+              '        <name>', clean_ind_name, ' (Point ', i, ')</name>\n',
+              '        <description>', description, '</description>\n',
+              
+              # Inject Extended Data Schema Table
+              '        <ExtendedData>\n',
+              '          <Data name="Device.id">\n',
+              '            <value>', Device.id, '</value>\n',
+              '          </Data>\n',
+              '          <Data name="Timestamp">\n',
+              '            <value>', current_time, '</value>\n',
+              '          </Data>\n',
+              '          <Data name="Lat">\n',
+              '            <value>', Lat, '</value>\n',
+              '          </Data>\n',
+              '          <Data name="Lon">\n',
+              '            <value>', Lon, '</value>\n',
+              '          </Data>\n',
+              '          <Data name="Status">\n',
+              '            <value>', Status, '</value>\n',
+              '          </Data>\n',
+              '        </ExtendedData>\n',
+              
+              # Spatial Geometry Node
+              '        <Point>\n',
+              '          <coordinates>', Lon, ',', Lat, ',0</coordinates>\n',
+              '        </Point>\n',
+              '      </Placemark>\n'
+            )
+          }
+          
+          # Close individual folder block
+          kml_body <- paste0(kml_body, '    </Folder>\n')
+        }
+        
+        # --- 4. ASSEMBLE ARCHITECTURE & SAVE CLEAN FILE ---
+        full_kml_string <- paste0(
+          '<?xml version="1.0" encoding="UTF-8"?>\n',
+          '<kml xmlns="http://opengis.net">\n',
+          '  <Document>\n',
+          '    <name>Move2 Extended Points Export</name>\n',
+          kml_body,
+          '  </Document>\n',
+          '</kml>'
+        )
+        # Render and enforce XML compliance 
+        final_doc <- read_xml(full_kml_string)
+        write_xml(final_doc, file)
+      }
     }else  
     if(input$download_select == "Report"){
       # Parameters to pass to the Rmd
