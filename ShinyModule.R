@@ -85,12 +85,15 @@ shinyModuleUserInterface <- function(id, label) {
           div(style = "margin-bottom: 5%;",
               DTOutput(ns("info_table")), 
           ),
-            uiOutput(ns("ui_map_all")),
+            #uiOutput(ns("ui_map_all")),
+            input_switch(id = ns("map_all"), label = "Map all individuals", value = FALSE), 
             uiOutput(ns("ui_select_individual")),
             uiOutput(ns("ui_notification_type")),
             uiOutput(ns("ui_basemap_type")),
             # dynamic control for data filter controls based on input$map_all
-            uiOutput(ns("dynamic_filter_toggle")),
+            #uiOutput(ns("dynamic_filter_toggle")),
+            radioButtons(inputId = ns("filter_toggle"), label = "Select filter",
+                       choices = c("Date","Number of locations"), selected = "Date", inline = TRUE),
             uiOutput(ns("dynamic_data_filter")),
               h6("Data tools"),
               fluidRow(
@@ -118,12 +121,7 @@ shinyModuleUserInterface <- function(id, label) {
           tabsetPanel(
             # tabPanel 1 - Leaflet map
             tabPanel(title = "Map",
-              conditionalPanel(
-                condition = "input.map_all == '0'", ns = ns,
-                    withSpinner(leafletOutput(ns("leafletMap"),width = "100%", height = "80vh"))),
-              conditionalPanel(
-                condition = "input.map_all == '1'", ns = ns,
-                    withSpinner(leafletOutput(ns("leaflet_allMap"),width = "100%", height = "80vh")))), 
+                withSpinner(leafletOutput(ns("leaflet_allMap"),width = "100%", height = "80vh"))),
             # tabPanel 2 - All data table   
             tabPanel(title = "All data", 
               DTOutput(ns("all_table"))),
@@ -208,9 +206,9 @@ shinyModule <- function(input, output, session, data) {
     })
   
     # create switch to filter individuals by only those with event alerts
-    output$ui_map_all <- renderUI({
-      input_switch(id = ns("map_all"), label = "Map all individuals", value = FALSE)
-    })
+    #output$ui_map_all <- renderUI({
+    #  input_switch(id = ns("map_all"), label = "Map all individuals", value = FALSE)
+    #})
     
     # build data table for DT with ID, tag_local_identifier, and number of notifications
     output$info_table <- DT::renderDT({
@@ -286,42 +284,10 @@ shinyModule <- function(input, output, session, data) {
       )
     }) 
     
-    # reactive value to track state of map_all
-    active_input_toggle <- reactiveVal(TRUE)
-    
-    # toggle the state when the map_all input is changed
-    observeEvent(input$map_all, {
-      active_input_toggle(!active_input_toggle())
-    })
-    
-    output$dynamic_filter_toggle <- renderUI({
-      # toggle based on map_all to change UI inputs for date_range and number_locations
-      if(!active_input_toggle()){
-          radioButtons(inputId = ns("filter_toggle"), label = "Select filter",
-                     choices = c("Date","Number of locations"), selected = "Date", inline = TRUE)
-      }else
-      if(active_input_toggle()){  
-        radioButtons(inputId = ns("filter_toggle_all"), label = "Select filter",
-                     choices = c("Date","Number of locations"), selected = "Date", inline = TRUE)
-      }
-    })  
-    
-    # reactive value to track state of filter_toggle
-    active_input_filter <- reactiveVal(TRUE)
-    
-    # toggle the state when the map_all input is changed
-    observeEvent(input$filter_toggle, {
-      active_input_filter(!active_input_filter())
-    })
-    
-    # toggle the state when the map_all input is changed
-    observeEvent(input$filter_toggle_all, {
-      active_input_filter(!active_input_filter())
-    })
     
     output$dynamic_data_filter <- renderUI({
       req(rv$data, input$individual_select)
-      if(!active_input_toggle() && active_input_filter()){
+      if(input$map_all == FALSE && input$filter_toggle == "Date"){
         min_date = suppressWarnings(min(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
         max_date = suppressWarnings(max(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
         req(as.character(min_date) != "Inf" && as.character(max_date) != "Inf")
@@ -329,13 +295,13 @@ shinyModule <- function(input, output, session, data) {
                        start = min_date, end = max_date,
                        min = min_date, max = max_date)
       }else
-      if(!active_input_toggle() && !active_input_filter()){
+      if(input$map_all == FALSE && input$filter_toggle == "Number of locations"){
         max_rows <- nrow(filter_track_data(rv$data, .track_id = input$individual_select))
         req(max_rows >= 1)
         sliderInput(inputId = ns("number_locations"), label = "Select number of locations", 
                     min = 1, max = max_rows, value = max_rows, step = 1)
       }else
-      if(active_input_toggle() && active_input_filter()){
+      if(isTRUE(input$map_all) && input$filter_toggle == "Date"){
         temp_data <- rv$data
         min_date = suppressWarnings(min(as.Date(temp_data |> mt_time())))
         max_date = suppressWarnings(max(as.Date(temp_data |> mt_time())))
@@ -344,7 +310,7 @@ shinyModule <- function(input, output, session, data) {
                        start = min_date, end = max_date,
                        min = min_date, max = max_date) 
       }else
-      if(active_input_toggle() && !active_input_filter()){
+      if(isTRUE(input$map_all) && input$filter_toggle == "Number of locations"){
         max_rows <- max(as.vector(table(mt_track_id(rv$data))), na.rm = TRUE)
         req(max_rows >= 1)
         sliderInput(inputId = ns("number_locations_all"), label = "Select number of locations per individual", 
@@ -398,14 +364,16 @@ shinyModule <- function(input, output, session, data) {
     
     # data filter for overall individual
     data_individual <- reactive({
-      req(rv$data,input$individual_select,input$number_locations,input$date_range)
+      req(rv$data,input$individual_select)
       filtered_data <- filter_track_data(rv$data, .track_id = input$individual_select)
       req(nrow(filtered_data) > 0)
       if(input$filter_toggle == "Date"){
+        req(length(input$date_range)>1)
         filtered_data2 <- filtered_data |> filter(between(as.Date(mt_time(filtered_data)), 
                                                           as.Date(input$date_range[1]),as.Date(input$date_range[2])))
       }else
       if(input$filter_toggle == "Number of locations"){
+        req(isFALSE(is.null(input$number_locations)))
         filtered_data2 <- filtered_data |> slice_tail(n=input$number_locations)
       }
       # add unique id to data for clicking on Leaflet map
@@ -429,12 +397,14 @@ shinyModule <- function(input, output, session, data) {
     
     # data filter for all individuals
     data_all <- reactive({
-      req(rv$data,input$number_locations_all,input$date_range_all)
-      if(input$filter_toggle_all == "Date"){
+      req(rv$data)
+      if(input$filter_toggle == "Date"){
+        req(length(input$date_range_all)>1)
         filtered_data_all <- rv$data |> filter(between(as.Date(mt_time(rv$data)), 
                                                           as.Date(input$date_range_all[1]),as.Date(input$date_range_all[2])))
       }else
-      if(input$filter_toggle_all == "Number of locations"){
+      if(input$filter_toggle == "Number of locations"){
+        req(isFALSE(is.null(input$number_locations_all)))
         # need to keep same number of locations per individual as they are reduced
         filtered_data_all <- rv$data |>
           group_by(.data[[mt_track_id_column(rv$data)]]) |>
@@ -919,10 +889,17 @@ leaf_map_all <- reactive({
     return(map2)
   })    
 
-  output$leaflet_allMap <- renderLeaflet({
-    leaf_map_all()
-  })   
-
+# render leaflet map depending on map_all input
+output$leaflet_allMap <- renderLeaflet({
+   if(isFALSE(input$map_all)){
+     leaf_map()
+   }else
+   if(isTRUE(input$map_all)){
+      leaf_map_all()
+   }
+})
+  
+  
 # store user-adjusted leaflet map (zoom, and coordinates)
 user_map <- reactive({
   # call the Leaflet map
