@@ -42,17 +42,17 @@ The Download button enables a local download of the "All data" table (as a .csv 
 
 **Select basemap (`basemap_type`):** Select provider basemap for Leaflet map tab. Options include: World Imagery, World Topo Map, World Street Map, NatGeo World Map, OpenStreet Map, and OpenStreet Topo Map. Default is World Imagery.
 
-**Data filter toggle (`filter_toggle`):** This switch filters the individual's data by either a date range or number of locations. Depending on the position of the toggle, a UI element will appear for either the date range or number of location data filters. Default is to filter by date range. 
+**Data filter toggle (`filter_toggle`):** This switch filters the individual's data by either a date range or number of locations. Depending on the position of the toggle, a UI element will appear for either the date range or number of location data filters. Note that this toggle only appears when the map_all input toggle is turned off. Default is to filter by date range. 
 
-**Date range filter (`date_range`):** Select the date range to filter the move2 dataset by. Note that the available date range will automatically update when different individuals are selected. Default is the entire available date range.
+**Date range filter (`date_range`):** Select the date range to filter the move2 dataset by. Note that the available date range will automatically update when different individuals are selected, and that widget only appears when the map_all input toggle is turned off. Default is the entire available date range. 
 
-**Number of locations filter (`number_locations`):** Select the number of locations to filter the move2 dataset by. Note that the maximum number of locations will automatically update when different individuals are selected. Default is the maximum number of locations.
+**Number of locations filter (`number_locations`):** Select the number of locations to filter the move2 dataset by. Note that the maximum number of locations will automatically update when different individuals are selected, and that widget only appears when the map_all input toggle is turned off. Default is the maximum number of locations.
 
-**Data filter toggle (`filter_toggle_all`):** This switch filters the all data by either a date range or number of locations. Depending on the position of the toggle, a UI element will appear for either the date range or number of location data filters. Default is to filter by date range. 
+**Data filter toggle (`filter_toggle_all`):** This switch filters the all data by either a date range or number of locations. Depending on the position of the toggle, a UI element will appear for either the date range or number of location data filters. Note that this toggle only appears when the map_all input toggle is turned on. Default is to filter by date range. 
 
-**Date range filter (`date_range_all`):** Select the date range to filter the entire move2 dataset by. Note that the available date range will automatically update for the entire dataset. Default is the entire available date range.
+**Date range filter (`date_range_all`):** Select the date range to filter the entire move2 dataset by. Note that the available date range will automatically update for the entire dataset, and that widget only appears when the map_all input toggle is turned on. Default is the entire available date range.
 
-**Number of locations filter (`number_locations_all`):** Select the number of locations to filter the entire move2 dataset by. Note that the maximum number of locations will automatically update for the entire dataset. Default is the maximum number of locations.
+**Number of locations filter (`number_locations_all`):** Select the number of locations to filter the entire move2 dataset by. Note that the maximum number of locations will automatically update for the entire dataset, and that widget only appears when the map_all input toggle is turned on. Default is the maximum number of locations.
 
 **Remove individual (`delete`):** This button will remove the currently selected individual from the dataset. This feature was provided for data editing purposes where an individual's deployment was ended on Movebank and the user does not want to consider this indvidual for further inspection.
 
