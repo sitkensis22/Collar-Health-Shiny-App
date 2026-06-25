@@ -279,83 +279,154 @@ shinyModule <- function(input, output, session, data) {
       )
     }) 
     
-    
+    # render dynmaic output for data filters
     output$dynamic_data_filter <- renderUI({
-      req(rv$data, input$individual_select)
-      if(input$map_all == FALSE && input$filter_toggle == "Date"){
-        min_date = suppressWarnings(min(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
-        max_date = suppressWarnings(max(as.Date(filter_track_data(rv$data, .track_id = input$individual_select) |> mt_time())))
-        req(as.character(min_date) != "Inf" && as.character(max_date) != "Inf")
-        dateRangeInput(inputId = ns("date_range"), label = "Select date range", 
-                       start = min_date, end = max_date,
-                       min = min_date, max = max_date)
-      }else
-      if(input$map_all == FALSE && input$filter_toggle == "Number of locations"){
-        max_rows <- nrow(filter_track_data(rv$data, .track_id = input$individual_select))
-        req(max_rows >= 1)
-        sliderInput(inputId = ns("number_locations"), label = "Select number of locations", 
-                    min = 1, max = max_rows, value = max_rows, step = 1)
-      }else
-      if(isTRUE(input$map_all) && input$filter_toggle == "Date"){
-        temp_data <- rv$data
-        min_date = suppressWarnings(min(as.Date(temp_data |> mt_time())))
-        max_date = suppressWarnings(max(as.Date(temp_data |> mt_time())))
-        req(as.character(min_date) != "Inf" && as.character(max_date) != "Inf")
-        dateRangeInput(inputId = ns("date_range_all"), label = "Select date range", 
-                       start = min_date, end = max_date,
-                       min = min_date, max = max_date) 
-      }else
-      if(isTRUE(input$map_all) && input$filter_toggle == "Number of locations"){
-        max_rows <- max(as.vector(table(mt_track_id(rv$data))), na.rm = TRUE)
-        req(max_rows >= 1)
-        sliderInput(inputId = ns("number_locations_all"), label = "Select number of locations per individual", 
-                    min = 1, max = max_rows, value = max_rows, step = 1)
-      }
-    })  
-    
-    # initialize the historical state storage
-    stored_states <- reactiveValues()
-    
-    # reactive to generate a unique key for the current individual + toggle view
-    current_state_key <- reactive({
-      req(input$individual_select, input$filter_toggle)
-      paste0(input$individual_select, "_", input$filter_toggle)
-    })
-    
-    # save state: capture inputs whenever the user moves the slider or changes the dates
-    observe({
-      req(current_state_key(), input$date_range, input$number_locations)
+      req(rv$data)
       
-      # Store the current values under the unique key
-      stored_states[[current_state_key()]] <- list(
-        date_range = input$date_range,
-        num_locs = input$number_locations
-      )
-    })
-    
-    # restore state: update UI inputs when the individual or toggle switches
-    observeEvent(current_state_key(), {
-      req(current_state_key())
-      
-      # Check if we have saved history for this specific person + toggle combo
-      history <- stored_states[[current_state_key()]]
-      
-      if (!is.null(history)) {
-        # History exists! Restore the exact previous selections safely
-        updateDateRangeInput(
-          session = session,
-          inputId = "date_range",
-          start = history$date_range[1], # First date element
-          end = history$date_range[2]    # Second date element
-        )
+      # individual mode calculations
+      if (!is.null(input$individual_select)) {
+        current_state <- saved_states$states_list[[input$individual_select]]
         
-        updateSliderInput(
-          session = session,
-          inputId = "number_locations",
-          value = history$num_locs
-        )
+        track_data <- filter_track_data(rv$data, .track_id = input$individual_select)
+        track_time <- mt_time(track_data)
+        
+        abs_min_date <- suppressWarnings(min(as.Date(track_time), na.rm = TRUE))
+        abs_max_date <- suppressWarnings(max(as.Date(track_time), na.rm = TRUE))
+        abs_max_rows <- nrow(track_data)
+        
+        saved_start <- if(!is.null(current_state$date_range)) current_state$date_range[1] else abs_min_date
+        saved_end   <- if(!is.null(current_state$date_range)) current_state$date_range[2] else abs_max_date
+        saved_value <- if(!is.null(current_state$number_locations)) current_state$number_locations else abs_max_rows
+      }
+      
+      # global (map_all) mode calculations
+      global_state <- saved_states$global_all_state
+      
+      abs_min_date_all <- suppressWarnings(min(as.Date(rv$data |> mt_time()), na.rm = TRUE))
+      abs_max_date_all <- suppressWarnings(max(as.Date(rv$data |> mt_time()), na.rm = TRUE))
+      abs_max_rows_all <- max(as.vector(table(mt_track_id(rv$data))), na.rm = TRUE)
+      
+      saved_start_all <- if(!is.null(global_state$date_range_all)) global_state$date_range_all[1] else abs_min_date_all
+      saved_end_all   <- if(!is.null(global_state$date_range_all)) global_state$date_range_all[2] else abs_max_date_all
+      saved_value_all <- if(!is.null(global_state$number_locations_all)) global_state$number_locations_all else abs_max_rows_all
+      
+      
+      # conditional UI rendering
+      if(input$map_all == FALSE && input$filter_toggle == "Date"){
+        req(input$individual_select, as.character(abs_min_date) != "Inf" && as.character(abs_max_date) != "Inf")
+        
+        # Explicitly format dates to strings to suppress warnings
+        dateRangeInput(inputId = ns("date_range"), label = "Select date range", 
+                       start = format(as.Date(saved_start), "%Y-%m-%d"), 
+                       end   = format(as.Date(saved_end), "%Y-%m-%d"),
+                       min   = abs_min_date, 
+                       max   = abs_max_date)
+        
+      } else if(input$map_all == FALSE && input$filter_toggle == "Number of locations"){
+        req(input$individual_select, abs_max_rows >= 1)
+        
+        sliderInput(inputId = ns("number_locations"), label = "Select number of locations", 
+                    min = 1, max = abs_max_rows, value = saved_value, step = 1)
+        
+      } else if(isTRUE(input$map_all) && input$filter_toggle == "Date"){
+        req(as.character(abs_min_date_all) != "Inf" && as.character(abs_max_date_all) != "Inf")
+        
+        # split start and end parameter controls properly and formatted as standard character strings
+        dateRangeInput(inputId = ns("date_range_all"), label = "Select date range", 
+                       start = format(as.Date(saved_start_all), "%Y-%m-%d"), 
+                       end   = format(as.Date(saved_end_all), "%Y-%m-%d"),
+                       min   = abs_min_date_all, 
+                       max   = abs_max_date_all) 
+        
+      } else if(isTRUE(input$map_all) && input$filter_toggle == "Number of locations"){
+        req(abs_max_rows_all >= 1)
+        
+        sliderInput(inputId = ns("number_locations_all"), label = "Select number of locations per individual", 
+                    min = 1, max = abs_max_rows_all, value = saved_value_all, step = 1)
       }
     })
+    
+    outputOptions(output, "dynamic_data_filter", suspendWhenHidden = FALSE)
+    
+    # initialize the historical state storage (added global_all_state)
+    saved_states <- reactiveValues(
+      states_list = list(),
+      global_all_state = list(date_range_all = NULL, number_locations_all = NULL)
+    )
+    
+    # Populate saved_states with default values when data loads
+    observe({
+      req(rv$table, rv$data)
+      unique_ids <- unique(rv$table[, mt_track_id_column(rv$data)])
+      
+      isolate({
+        # individual initializations
+        for(i in seq_along(unique_ids)){
+          if (is.null(saved_states$states_list[[unique_ids[i]]])) {
+            track_data <- filter_track_data(rv$data, .track_id = unique_ids[i])
+            track_time <- mt_time(track_data)
+            
+            saved_states$states_list[[unique_ids[i]]] <- list(
+              date_range = c(suppressWarnings(min(as.Date(track_time), na.rm = TRUE)), 
+                             suppressWarnings(max(as.Date(track_time), na.rm = TRUE))),
+              number_locations = nrow(track_data)
+            )
+          }
+        }
+        
+        # global initializations (map all mode)
+        if (is.null(saved_states$global_all_state$date_range_all)) {
+          saved_states$global_all_state <- list(
+            date_range_all = c(suppressWarnings(min(as.Date(rv$data |> mt_time()), na.rm = TRUE)), 
+                               suppressWarnings(max(as.Date(rv$data |> mt_time()), na.rm = TRUE))),
+            number_locations_all = max(as.vector(table(mt_track_id(rv$data))), na.rm = TRUE)
+          )
+        }
+      })
+    })
+    
+    #sSave state when any visible input is manipulated
+    observeEvent(list(input$date_range, input$number_locations, 
+                      input$date_range_all, input$number_locations_all), {
+        
+        # map all mode
+        if (isTRUE(input$map_all)) {
+          current_global <- saved_states$global_all_state
+          new_date_all <- current_global$date_range_all
+          new_num_all  <- current_global$number_locations_all
+          
+          if (input$filter_toggle == "Date" && !is.null(input$date_range_all)) {
+            new_date_all <- input$date_range_all
+          }
+          if (input$filter_toggle == "Number of locations" && !is.null(input$number_locations_all)) {
+            new_num_all <- input$number_locations_all
+          }
+          
+          saved_states$global_all_state <- list(
+            date_range_all = new_date_all,
+            number_locations_all = new_num_all
+          )
+          
+          # individual select mode
+        } else {
+          req(input$individual_select)
+          current_state <- saved_states$states_list[[input$individual_select]]
+          new_date_range <- current_state$date_range
+          new_number_locations <- current_state$number_locations
+          
+          if (input$filter_toggle == "Date" && !is.null(input$date_range)) {
+            new_date_range <- input$date_range
+          }
+          if (input$filter_toggle == "Number of locations" && !is.null(input$number_locations)) {
+            new_number_locations <- input$number_locations
+          }
+          
+          saved_states$states_list[[input$individual_select]] <- list(
+            date_range = new_date_range,
+            number_locations = new_number_locations
+          )
+        }
+      }, ignoreInit = TRUE)
     
     # data filter for overall individual
     data_individual <- reactive({
