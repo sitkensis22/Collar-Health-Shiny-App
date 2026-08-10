@@ -22,17 +22,17 @@ library("zip")
   # helper function 1
   get_alertTable <- function(data){
       # store alert fields
-      alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
+      alerts <- c("mortality","resurrection","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
       # subset ids and alert fields
       temp_table <- cbind(id = mt_track_id(data),as.data.frame(data)[,alerts])
       # get unique triggers over each individual
-      temp_alerts <- temp_table |> group_by(id) |> summarize(mortality = sum(mortality),cluster = sum(cluster),
+      temp_alerts <- temp_table |> group_by(id) |> summarize(mortality = sum(mortality), resurrection = sum(resurrection), cluster = sum(cluster),
                                                   nsd = sum(nsd), voltage = sum(voltage), gps_accuracy = sum(gps_accuracy), 
                                                   gps_transmission = sum(gps_transmission), gps_resurrection = sum(gps_resurrection),
                                                   tag_release = sum(tag_release))
       temp_alerts[,alerts] <- ifelse(temp_alerts[,alerts] > 0, 1, 0)
-      temp_alerts <- tidyr::gather(temp_alerts, key = "notification_type", "count",mortality, cluster, nsd, voltage, gps_accuracy, 
-                                   gps_transmission, gps_resurrection, tag_release) |> as.data.frame()
+      temp_alerts <- tidyr::gather(temp_alerts, key = "notification_type", "count",mortality, resurrection, cluster, nsd, voltage,  
+                                   gps_accuracy, gps_transmission, gps_resurrection, tag_release) |> as.data.frame()
       colnames(temp_alerts)[1] <- mt_track_id_column(data)
       # check to see if deployment_end_type exists, if not, add it and make all tags active
       if(isFALSE("deployment_end_type" %in% colnames(mt_track_data(data)))){
@@ -516,7 +516,7 @@ shinyModule <- function(input, output, session, data) {
     field_columns <- reactive({
       req(data_individual(),input$notification_type,rv$data)
       available_colnames <- colnames(rv$data)[1:(ncol(rv$data)-1)]
-      alerts <- c("mortality","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
+      alerts <- c("mortality","resurrection","cluster","nsd","voltage","gps_accuracy","gps_transmission","gps_resurrection","tag_release")
       # remove current input$notification from alerts vector
       alerts <- alerts[-which(alerts == input$notification_type)]
       available_colnames <- available_colnames[-which(available_colnames %in% alerts)]
@@ -1030,6 +1030,37 @@ if(unique(data_individual()$nAlerts) == 0){
   ggplotly(gg1, tooltip = c("text")) %>%
   layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
 }else
+if(input$notification_type == "resurrection" & unique(data_individual()$nAlerts) > 0){
+  # make time series plot that adjusts based on notification type
+  plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
+  # rename first column to timestamp
+  colnames(plot_data)[1] = "timestamp"
+  # create resurrection status as a factor based on event indicator variable
+  plot_data$resurrection_status <- character(nrow(plot_data))
+  plot_data$resurrection_status[which(plot_data$resurrection == 1)] <- "Resurrection"
+  plot_data$resurrection_status[which(plot_data$resurrection == 0)] <- "No Ressurection"
+  # now convert to a factor
+  plot_data$resurrection_status <- as.factor(plot_data$resurrection_status)
+  # reset levels depending on if any indicators are zero
+  if(any(plot_data$resurrection == 0)){
+    plot_data$resurrection_status <- relevel(plot_data$resurrection_status, ref = "No Ressurection")
+  }
+  gg2 <- ggplot(plot_data, aes(x = timestamp, y = resurrection, group = resurrection_status,
+                               color = resurrection_status,
+                               text = paste("</br>Date:",timestamp,
+                                            "</br>Status:",resurrection_status))) + 
+    geom_point() + scale_y_continuous(breaks = c(0,1)) + scale_color_manual(values = plot_color) +
+    xlab("Date") + ylab("Resurrection indicator") + theme_bw() +
+    theme(axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1),
+          axis.text.y = element_text(size = 16),
+          axis.title.x = element_text(size = 20),
+          axis.title.y = element_text(size = 20),
+          legend.text = element_text(size = 14),
+          legend.title = element_text(size = 18)) +
+    guides(color=guide_legend(title="Resurrection status")) 
+  ggplotly(gg2, tooltip = c("text")) %>%
+    layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
+}else 
 if(input$notification_type == "cluster"& unique(data_individual()$nAlerts) > 0){
   # make time series plot that adjusts based on notification type
   plot_data <- data_individual() |> as.data.frame() |> dplyr::select(mt_time_column(data_individual()),input$notification_type) 
@@ -1045,7 +1076,7 @@ if(input$notification_type == "cluster"& unique(data_individual()$nAlerts) > 0){
   if(any(plot_data$cluster == 0)){
     plot_data$cluster_status <- relevel(plot_data$cluster_status, ref = "Not in cluster")
   }
-  gg2 <- ggplot(plot_data, aes(x = timestamp, y = cluster, group = cluster_status,
+  gg3 <- ggplot(plot_data, aes(x = timestamp, y = cluster, group = cluster_status,
                              color = cluster_status,
                              text = paste("</br>Date:",timestamp,
                                           "</br>Status:",cluster_status))) + 
@@ -1058,7 +1089,7 @@ if(input$notification_type == "cluster"& unique(data_individual()$nAlerts) > 0){
         legend.text = element_text(size = 14),
         legend.title = element_text(size = 18)) +
   guides(color=guide_legend(title="Cluster status")) 
-  ggplotly(gg2, tooltip = c("text")) %>%
+  ggplotly(gg3, tooltip = c("text")) %>%
   layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
 }else
 if(input$notification_type == "nsd"& unique(data_individual()$nAlerts) > 0){
@@ -1076,7 +1107,7 @@ if(input$notification_type == "nsd"& unique(data_individual()$nAlerts) > 0){
     if(any(plot_data$nsd == 0)){
       plot_data$nsd_status <- relevel(plot_data$nsd_status, ref = "Not above max NSD")
     }
-    gg3 <- ggplot(plot_data, aes(x = timestamp, y = nsd, group = nsd_status,
+    gg4 <- ggplot(plot_data, aes(x = timestamp, y = nsd, group = nsd_status,
                                  color = nsd_status,
                                  text = paste("</br>Date:",timestamp,
                                               "</br>Status:", nsd_status))) + 
@@ -1089,7 +1120,7 @@ if(input$notification_type == "nsd"& unique(data_individual()$nAlerts) > 0){
           legend.text = element_text(size = 14),
           legend.title = element_text(size = 18)) +
     guides(color=guide_legend(title="NSD status")) 
-  ggplotly(gg3, tooltip = c("text")) %>%
+  ggplotly(gg4, tooltip = c("text")) %>%
     layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
 }else
 if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0){
@@ -1122,7 +1153,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
     if(data_individual()$voltage_value[1] >= 1){   
       voltage_value = data_individual()$voltage_value[1]
     }
-    gg4 <- ggplot(plot_data, aes(x = timestamp, y = as.numeric(tag_voltage), group = voltage_status,
+    gg5 <- ggplot(plot_data, aes(x = timestamp, y = as.numeric(tag_voltage), group = voltage_status,
                                  color = voltage_status, 
                                  text = paste("</br>Date:",timestamp,
                                               "</br>Status:", voltage_status,
@@ -1137,7 +1168,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
           legend.text = element_text(size = 14),
           legend.title = element_text(size = 18)) +
     guides(color=guide_legend(title="Voltage status")) 
-  ggplotly(gg4, tooltip = c("text")) %>%
+  ggplotly(gg5, tooltip = c("text")) %>%
     layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
 }else
   if(input$notification_type == "gps_accuracy" & unique(data_individual()$nAlerts) > 0){
@@ -1155,7 +1186,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
     if(any(plot_data$gps_accuracy == 0)){
       plot_data$gps_accuracy_status <- relevel(plot_data$gps_accuracy_status, ref = "2D GPS Fix or failed")
     }
-    gg5 <- ggplot(plot_data, aes(x = timestamp, y = gps_accuracy, group = gps_accuracy_status,
+    gg6 <- ggplot(plot_data, aes(x = timestamp, y = gps_accuracy, group = gps_accuracy_status,
                                  color = gps_accuracy_status,
                                  text = paste("</br>Date:",timestamp,
                                               "</br>Status:",gps_accuracy_status))) + 
@@ -1169,7 +1200,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
             legend.text = element_text(size = 14),
             legend.title = element_text(size = 18)) +
       guides(color=guide_legend(title="GPS accuracy status")) 
-    ggplotly(gg5, tooltip = c("text")) %>%
+    ggplotly(gg6, tooltip = c("text")) %>%
       layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
   }else
   if(input$notification_type == "gps_transmission" & unique(data_individual()$nAlerts) > 0){
@@ -1187,7 +1218,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       if(any(plot_data$gps_transmission == 0)){
         plot_data$gps_transmission_status <- relevel(plot_data$gps_transmission_status, ref = "Normal transmission")
       }
-      gg6 <- ggplot(plot_data, aes(x = timestamp, y = gps_transmission, group = gps_transmission_status,
+      gg7 <- ggplot(plot_data, aes(x = timestamp, y = gps_transmission, group = gps_transmission_status,
                                    color = gps_transmission_status,
                                    text = paste("</br>Date:",timestamp,
                                                 "</br>Status:",gps_transmission_status))) + 
@@ -1200,7 +1231,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
             legend.text = element_text(size = 14),
             legend.title = element_text(size = 18)) +
       guides(color=guide_legend(title="GPS transmission status")) 
-    ggplotly(gg6, tooltip = c("text")) %>%
+    ggplotly(gg7, tooltip = c("text")) %>%
       layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))
   }else
     if(input$notification_type == "gps_resurrection" & unique(data_individual()$nAlerts) > 0){
@@ -1218,7 +1249,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       if(any(plot_data$gps_resurrection == 0)){
         plot_data$gps_resurrection_status <- relevel(plot_data$gps_resurrection_status, ref = "Normal transmission")
       }
-      gg7 <- ggplot(plot_data, aes(x = timestamp, y = gps_resurrection, group = gps_resurrection_status,
+      gg8 <- ggplot(plot_data, aes(x = timestamp, y = gps_resurrection, group = gps_resurrection_status,
                                    color = gps_resurrection_status,
                                    text = paste("</br>Date:",timestamp,
                                                 "</br>Status:",gps_resurrection_status))) + 
@@ -1231,7 +1262,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
               legend.text = element_text(size = 14),
               legend.title = element_text(size = 18)) +
         guides(color=guide_legend(title="GPS resurrection status")) 
-      ggplotly(gg7, tooltip = c("text")) %>%
+      ggplotly(gg8, tooltip = c("text")) %>%
         layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))  
     }else
     if(input$notification_type == "tag_release" & unique(data_individual()$nAlerts) > 0){
@@ -1249,7 +1280,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
       if(any(plot_data$tag_release == 0)){
         plot_data$tag_release_status <- relevel(plot_data$tag_release_status, ref = "No release")
       }
-      gg8 <- ggplot(plot_data, aes(x = timestamp, y = tag_release, group = tag_release_status,
+      gg9 <- ggplot(plot_data, aes(x = timestamp, y = tag_release, group = tag_release_status,
                                    color = tag_release_status,
                                    text = paste("</br>Date:",timestamp,
                                                 "</br>Status:",tag_release_status))) + 
@@ -1262,7 +1293,7 @@ if(input$notification_type == "voltage" & unique(data_individual()$nAlerts) > 0)
               legend.text = element_text(size = 14),
               legend.title = element_text(size = 18)) +
         guides(color=guide_legend(title="Tag release status")) 
-      ggplotly(gg8, tooltip = c("text")) %>%
+      ggplotly(gg9, tooltip = c("text")) %>%
         layout(legend = list(orientation = "h", x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom"))  
    }
     # end of plots   
