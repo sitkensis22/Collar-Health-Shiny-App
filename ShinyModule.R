@@ -67,6 +67,7 @@ shinyModuleUserInterface <- function(id, label) {
       useShinyjs(),
       tags$style(type="text/css",
                  ".shiny-output-error { visibility: hidden; }",
+                 ".btn[class*='btn-outline-'] { background-image: none; border-color: var(--bs-btn-border-color); }",
                  ".shiny-output-error:before { visibility: visible; content: 'An error occurred. Please contact the admin.'; }"
       ),
       fluidRow(
